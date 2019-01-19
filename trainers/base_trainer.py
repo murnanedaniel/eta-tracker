@@ -20,7 +20,8 @@ class BaseTrainer(object):
     logging of summaries, and checkpoints.
     """
 
-    def __init__(self, output_dir=None, gpu=None, distributed=False, rank=0):
+    def __init__(self, output_dir=None, gpu=None,
+                 distributed=False, rank=0, n_ranks=1):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.output_dir = (os.path.expandvars(output_dir)
                            if output_dir is not None else None)
@@ -33,6 +34,7 @@ class BaseTrainer(object):
         self.summaries = None
         self.summary_file = None
         self.rank = rank
+        self.n_ranks = n_ranks
 
     def print_model_summary(self):
         """Override as needed"""

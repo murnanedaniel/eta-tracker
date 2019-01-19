@@ -19,8 +19,9 @@ class GNNTrainer(BaseTrainer):
         self.fake_weight = fake_weight
 
     def build_model(self, name='gnn_segment_classifier',
+                    loss_func='binary_cross_entropy',
                     optimizer='Adam', learning_rate=0.001,
-                    loss_func='binary_cross_entropy', **model_args):
+                    lr_scaling=None, **model_args):
         """Instantiate our model"""
 
         # Construct the model
@@ -28,11 +29,16 @@ class GNNTrainer(BaseTrainer):
         if self.distributed:
             self.model = nn.parallel.DistributedDataParallel(self.model,
                 device_ids=[self.gpu], output_device=self.gpu)
-        # TODO: LR scaling
+
+        # Construct the loss function
+        self.loss_func = getattr(nn.functional, loss_func)
+
+        # Construct the optimizer
+        # TODO: Add linear ramp warmup
+        if lr_scaling == 'linear':
+            learning_rate = learning_rate * self.n_ranks
         self.optimizer = getattr(torch.optim, optimizer)(
             self.model.parameters(), lr=learning_rate)
-        # Functional loss functions
-        self.loss_func = getattr(nn.functional, loss_func)
 
     def write_checkpoint(self, checkpoint_id):
         super(GNNTrainer, self).write_checkpoint(

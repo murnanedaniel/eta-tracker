@@ -101,7 +101,8 @@ def main():
         gpu = rank % args.ranks_per_node
     logging.info('Choosing GPU %s', gpu)
     trainer = get_trainer(distributed=args.distributed, output_dir=output_dir,
-                          rank=rank, gpu=gpu, **config['trainer'])
+                          rank=rank, n_ranks=n_ranks, gpu=gpu,
+                          **config['trainer'])
     # Build the model and optimizer
     trainer.build_model(**config.get('model', {}))
     if rank == 0:
