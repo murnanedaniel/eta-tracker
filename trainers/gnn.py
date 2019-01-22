@@ -21,7 +21,8 @@ class GNNTrainer(BaseTrainer):
     def build_model(self, name='gnn_segment_classifier',
                     loss_func='binary_cross_entropy',
                     optimizer='Adam', learning_rate=0.001,
-                    lr_scaling=None, **model_args):
+                    lr_scaling=None, lr_warmup_epochs=0,
+                    **model_args):
         """Instantiate our model"""
 
         # Construct the model
@@ -34,11 +35,21 @@ class GNNTrainer(BaseTrainer):
         self.loss_func = getattr(nn.functional, loss_func)
 
         # Construct the optimizer
-        # TODO: Add linear ramp warmup
         if lr_scaling == 'linear':
             learning_rate = learning_rate * self.n_ranks
         self.optimizer = getattr(torch.optim, optimizer)(
             self.model.parameters(), lr=learning_rate)
+
+        # LR ramp warmup schedule
+        def lr_warmup(epoch, warmup_factor=1, warmup_epochs=lr_warmup_epochs):
+            if epoch < warmup_epochs:
+                return (1 - warmup_factor) * epoch / warmup_epochs + warmup_factor
+            else:
+                return 1
+
+        # LR schedule
+        self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+            self.optimizer, lr_warmup)
 
     def write_checkpoint(self, checkpoint_id):
         super(GNNTrainer, self).write_checkpoint(
@@ -56,6 +67,7 @@ class GNNTrainer(BaseTrainer):
         self.model.train()
         summary = dict()
         sum_loss = 0
+        self.lr_scheduler.step()
         # Loop over training batches
         for i, (batch_input, batch_target) in enumerate(data_loader):
             batch_input = [a.to(self.device) for a in batch_input]
@@ -72,6 +84,7 @@ class GNNTrainer(BaseTrainer):
             sum_loss += batch_loss.item()
             self.logger.debug('  batch %i, loss %f', i, batch_loss.item())
 
+        summary['lr'] = self.optimizer.param_groups[0]['lr']
         summary['train_loss'] = sum_loss / (i + 1)
         self.logger.debug(' Processed %i batches' % (i + 1))
         self.logger.info('  Training loss: %.3f' % summary['train_loss'])
