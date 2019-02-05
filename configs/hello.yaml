@@ -1,11 +1,13 @@
-data_config:
+output_dir: ${SCRATCH}/heptrkx/results/hello
+
+trainer:
+    name: hello
+
+data:
     name: dummy
     n_train: 1024
     n_valid: 1024
     batch_size: 128
 
-experiment_config:
-    name: hello
-
-train_config:
+training:
     n_epochs: 1
