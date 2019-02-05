@@ -9,6 +9,7 @@ import time
 
 # Externals
 import numpy as np
+import pandas as pd
 import torch
 
 class BaseTrainer(object):
@@ -24,7 +25,8 @@ class BaseTrainer(object):
                            if output_dir is not None else None)
         self.device = device
         self.distributed = distributed
-        self.summaries = {}
+        self.summaries = None
+        self.summary_file = None
 
     def print_model_summary(self):
         """Override as needed"""
@@ -36,9 +38,10 @@ class BaseTrainer(object):
 
     def save_summary(self, summaries):
         """Save summary information"""
-        for (key, val) in summaries.items():
-            summary_vals = self.summaries.get(key, [])
-            self.summaries[key] = summary_vals + [val]
+        if self.summaries is None:
+            self.summaries = pd.DataFrame([summaries])
+        else:
+            self.summaries = self.summaries.append([summaries], ignore_index=True)
 
     def write_summaries(self):
         assert self.output_dir is not None
