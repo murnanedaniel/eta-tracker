@@ -77,9 +77,9 @@ class BaseTrainer(object):
         checkpoint_dir = os.path.join(self.output_dir, 'checkpoints')
         if checkpoint_id == -1:
             # Find the last checkpoint
-            pattern = re.compile('model_checkpoint_(\d..).pth.tar')
-            matches = [pattern.match(f) for f in os.listdir(checkpoint_dir)]
-            checkpoint_id = int(sorted(filter(matches))[-1].group(1))
+            last_checkpoint = sorted(os.listdir(checkpoint_dir))[-1]
+            pattern = 'model_checkpoint_(\d..).pth.tar'
+            checkpoint_id = int(re.match(pattern, last_checkpoint).group(1))
         checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
         logging.info('Reloading checkpoint at %s', checkpoint_file)
         return torch.load(os.path.join(checkpoint_dir, checkpoint_file))
