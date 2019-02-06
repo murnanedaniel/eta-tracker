@@ -38,6 +38,11 @@ class GNNTrainer(BaseTrainer):
             model=self.model.state_dict(),
             optimizer=self.optimizer.state_dict())
 
+    def load_checkpoint(self, checkpoint_id=-1):
+        checkpoint = super(GNNTrainer, self).load_checkpoint(checkpoint_id)
+        self.model.load_state_dict(checkpoint['model'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+
     def train_epoch(self, data_loader):
         """Train for one epoch"""
         self.model.train()

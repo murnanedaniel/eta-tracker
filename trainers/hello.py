@@ -3,6 +3,10 @@ Hello world PyTorch trainer.
 """
 
 # System
+import os
+
+# Externals
+import pandas as pd
 
 # Locals
 from .base_trainer import BaseTrainer
@@ -19,6 +23,12 @@ class HelloTrainer(BaseTrainer):
         pass
     def write_summaries(self):
         pass
+
+    def load_checkpoint(self, checkpoint_id=-1):
+        """Load a model checkpoint"""
+        assert self.output_dir is not None
+        summary_file = os.path.join(self.output_dir, 'summaries.csv')
+        self.summaries = pd.read_csv(summary_file)
 
     def print_model_summary(self):
         self.logger.info('Hello world')

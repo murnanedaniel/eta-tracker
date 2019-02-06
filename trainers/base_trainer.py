@@ -4,6 +4,7 @@ Common PyTorch trainer code.
 
 # System
 import os
+import re
 import logging
 import time
 
@@ -65,6 +66,24 @@ class BaseTrainer(object):
         checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
         torch.save(kwargs, os.path.join(checkpoint_dir, checkpoint_file))
 
+    def load_checkpoint(self, checkpoint_id=-1):
+        """Load a model checkpoint"""
+        assert self.output_dir is not None
+        # Load the summaries
+        summary_file = os.path.join(self.output_dir, 'summaries.csv')
+        logging.info('Reloading summary at %s', summary_file)
+        self.summaries = pd.read_csv(summary_file)
+        # Load the checkpoint
+        checkpoint_dir = os.path.join(self.output_dir, 'checkpoints')
+        if checkpoint_id == -1:
+            # Find the last checkpoint
+            pattern = re.compile('model_checkpoint_(\d..).pth.tar')
+            matches = [pattern.match(f) for f in os.listdir(checkpoint_dir)]
+            checkpoint_id = int(sorted(filter(matches))[-1].group(1))
+        checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
+        logging.info('Reloading checkpoint at %s', checkpoint_file)
+        return torch.load(os.path.join(checkpoint_dir, checkpoint_file))
+
     def build_model(self):
         """Virtual method to construct the model(s)"""
         raise NotImplementedError
@@ -81,7 +100,10 @@ class BaseTrainer(object):
         """Run the model training"""
 
         # Loop over epochs
-        for i in range(n_epochs):
+        start_epoch = 0
+        if self.summaries is not None:
+            start_epoch = self.summaries.epoch.max() + 1
+        for i in range(start_epoch, n_epochs):
             self.logger.info('Epoch %i' % i)
             summary = dict(epoch=i)
             # Train on this epoch

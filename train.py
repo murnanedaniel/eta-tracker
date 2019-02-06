@@ -27,6 +27,7 @@ def parse_args():
     add_arg('-d', '--distributed', action='store_true')
     add_arg('-v', '--verbose', action='store_true')
     add_arg('--device', default='cpu')
+    add_arg('--resume', action='store_true', help='Resume from last checkpoint')
     add_arg('--show-config', action='store_true')
     add_arg('--interactive', action='store_true')
     return parser.parse_args()
@@ -95,6 +96,10 @@ def main():
     trainer.build_model(**config.get('model', {}))
     if rank == 0:
         trainer.print_model_summary()
+
+    # Checkpoint resume
+    if args.resume:
+        trainer.load_checkpoint()
 
     # Run the training
     summary = trainer.train(train_data_loader=train_data_loader,
