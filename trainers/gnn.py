@@ -35,6 +35,7 @@ class GNNTrainer(BaseTrainer):
 
     def write_checkpoint(self, checkpoint_id):
         super(GNNTrainer, self).write_checkpoint(
+            checkpoint_id=checkpoint_id,
             model=self.model.state_dict(),
             optimizer=self.optimizer.state_dict())
 
