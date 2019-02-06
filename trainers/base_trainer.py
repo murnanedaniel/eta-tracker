@@ -37,13 +37,21 @@ class BaseTrainer(object):
         )
 
     def save_summary(self, summaries):
-        """Save summary information"""
+        """Save summary information.
+        This implementation is currently inefficient for simplicity:
+            - we build a new DataFrame each time
+            - we write the whole summary file each time
+        """
         if self.summaries is None:
             self.summaries = pd.DataFrame([summaries])
         else:
             self.summaries = self.summaries.append([summaries], ignore_index=True)
+        if self.output_dir is not None:
+            summary_file = os.path.join(self.output_dir, 'summaries.csv')
+            self.summaries.to_csv(summary_file, index=False)
 
     def write_summaries(self):
+        """Deprecated"""
         assert self.output_dir is not None
         summary_file = os.path.join(self.output_dir, 'summaries.npz')
         self.logger.info('Saving summaries to %s' % summary_file)
