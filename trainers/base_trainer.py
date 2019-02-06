@@ -57,14 +57,13 @@ class BaseTrainer(object):
         self.logger.info('Saving summaries to %s' % summary_file)
         np.savez(summary_file, **self.summaries)
 
-    def write_checkpoint(self, checkpoint_id):
+    def write_checkpoint(self, checkpoint_id, **kwargs):
         """Write a checkpoint for the model"""
         assert self.output_dir is not None
         checkpoint_dir = os.path.join(self.output_dir, 'checkpoints')
-        checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
         os.makedirs(checkpoint_dir, exist_ok=True)
-        torch.save(dict(model=self.model.state_dict()),
-                   os.path.join(checkpoint_dir, checkpoint_file))
+        checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
+        torch.save(kwargs, os.path.join(checkpoint_dir, checkpoint_file))
 
     def build_model(self):
         """Virtual method to construct the model(s)"""

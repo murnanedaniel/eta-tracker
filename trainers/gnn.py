@@ -32,7 +32,12 @@ class GNNTrainer(BaseTrainer):
             self.model.parameters(), lr=learning_rate)
         # Functional loss functions
         self.loss_func = getattr(nn.functional, loss_func)
-    
+
+    def write_checkpoint(self, checkpoint_id):
+        super(GNNTrainer, self).write_checkpoint(
+            model=self.model.state_dict(),
+            optimizer=self.optimizer.state_dict())
+
     def train_epoch(self, data_loader):
         """Train for one epoch"""
         self.model.train()
