@@ -27,18 +27,21 @@ def parse_args():
     add_arg('-d', '--distributed', action='store_true')
     add_arg('-v', '--verbose', action='store_true')
     add_arg('--device', default='cpu')
+    add_arg('--resume', action='store_true', help='Resume from last checkpoint')
     add_arg('--show-config', action='store_true')
     add_arg('--interactive', action='store_true')
     return parser.parse_args()
 
-def config_logging(verbose, output_dir):
+def config_logging(verbose, output_dir, append=False):
     log_format = '%(asctime)s %(levelname)s %(message)s'
     log_level = logging.DEBUG if verbose else logging.INFO
     stream_handler = logging.StreamHandler(stream=sys.stdout)
     stream_handler.setLevel(log_level)
     handlers = [stream_handler]
     if output_dir is not None:
-        file_handler = logging.FileHandler(os.path.join(output_dir, 'out.log'), mode='w')
+        log_file = os.path.join(output_dir, 'out.log')
+        mode = 'a' if append else 'w'
+        file_handler = logging.FileHandler(log_file, mode=mode)
         file_handler.setLevel(log_level)
         handlers.append(file_handler)
     logging.basicConfig(level=log_level, format=log_format, handlers=handlers)
@@ -73,7 +76,7 @@ def main():
         output_dir = None
 
     # Setup logging
-    config_logging(verbose=args.verbose, output_dir=output_dir)
+    config_logging(verbose=args.verbose, output_dir=output_dir, append=args.resume)
     logging.info('Initialized rank %i out of %i', rank, n_ranks)
     if args.show_config and (rank == 0):
         logging.info('Command line config: %s' % args)
@@ -96,6 +99,10 @@ def main():
     if rank == 0:
         trainer.print_model_summary()
 
+    # Checkpoint resume
+    if args.resume:
+        trainer.load_checkpoint()
+
     # Run the training
     summary = trainer.train(train_data_loader=train_data_loader,
                             valid_data_loader=valid_data_loader,
@@ -106,12 +113,12 @@ def main():
     # Print some conclusions
     n_train_samples = len(train_data_loader.sampler)
     logging.info('Finished training')
-    train_time = np.mean(summary['train_time'])
+    train_time = summary.train_time.mean()
     logging.info('Train samples %g time %g s rate %g samples/s',
                  n_train_samples, train_time, n_train_samples / train_time)
     if valid_data_loader is not None:
         n_valid_samples = len(valid_data_loader.sampler)
-        valid_time = np.mean(summary['valid_time'])
+        valid_time = summary.valid_time.mean()
         logging.info('Valid samples %g time %g s rate %g samples/s',
                      n_valid_samples, valid_time, n_valid_samples / valid_time)
 

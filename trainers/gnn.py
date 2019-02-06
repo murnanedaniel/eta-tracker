@@ -2,9 +2,6 @@
 This module defines a generic trainer for simple models and datasets.
 """
 
-# System
-import time
-
 # Externals
 import torch
 from torch import nn
@@ -35,13 +32,23 @@ class GNNTrainer(BaseTrainer):
             self.model.parameters(), lr=learning_rate)
         # Functional loss functions
         self.loss_func = getattr(nn.functional, loss_func)
-    
+
+    def write_checkpoint(self, checkpoint_id):
+        super(GNNTrainer, self).write_checkpoint(
+            checkpoint_id=checkpoint_id,
+            model=self.model.state_dict(),
+            optimizer=self.optimizer.state_dict())
+
+    def load_checkpoint(self, checkpoint_id=-1):
+        checkpoint = super(GNNTrainer, self).load_checkpoint(checkpoint_id)
+        self.model.load_state_dict(checkpoint['model'])
+        self.optimizer.load_state_dict(checkpoint['optimizer'])
+
     def train_epoch(self, data_loader):
         """Train for one epoch"""
         self.model.train()
         summary = dict()
         sum_loss = 0
-        start_time = time.time()
         # Loop over training batches
         for i, (batch_input, batch_target) in enumerate(data_loader):
             batch_input = [a.to(self.device) for a in batch_input]
@@ -58,7 +65,6 @@ class GNNTrainer(BaseTrainer):
             sum_loss += batch_loss.item()
             self.logger.debug('  batch %i, loss %f', i, batch_loss.item())
 
-        summary['train_time'] = time.time() - start_time
         summary['train_loss'] = sum_loss / (i + 1)
         self.logger.debug(' Processed %i batches' % (i + 1))
         self.logger.info('  Training loss: %.3f' % summary['train_loss'])
@@ -72,7 +78,6 @@ class GNNTrainer(BaseTrainer):
         sum_loss = 0
         sum_correct = 0
         sum_total = 0
-        start_time = time.time()
         # Loop over batches
         for i, (batch_input, batch_target) in enumerate(data_loader):
             self.logger.debug(' batch %i', i)
@@ -84,7 +89,6 @@ class GNNTrainer(BaseTrainer):
             matches = ((batch_output > 0.5) == (batch_target > 0.5))
             sum_correct += matches.sum().item()
             sum_total += matches.numel()
-        summary['valid_time'] = time.time() - start_time
         summary['valid_loss'] = sum_loss / (i + 1)
         summary['valid_acc'] = sum_correct / sum_total
         self.logger.debug(' Processed %i samples in %i batches',
