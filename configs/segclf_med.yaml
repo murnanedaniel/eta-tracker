@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_med_000
+output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_med_004
 
 trainer:
     name: gnn
@@ -8,15 +8,15 @@ trainer:
 data:
     name: hitgraphs
     input_dir: ${SCRATCH}/heptrkx/data/hitgraphs_med_002
-    n_train: 8192
-    n_valid: 1024
-    batch_size: 1
+    n_train: 16384
+    n_valid: 2048
+    batch_size: 4
     n_workers: 4
 
 model:
     name: 'gnn_segment_classifier'
     input_dim: 3
-    hidden_dim: 64
+    hidden_dim: 128
     n_iters: 4
     loss_func: 'binary_cross_entropy'
     optimizer: 'Adam'
