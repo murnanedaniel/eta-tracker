@@ -26,6 +26,7 @@ def parse_args():
     add_arg('config', nargs='?', default='configs/hello.yaml')
     add_arg('-d', '--distributed', action='store_true')
     add_arg('-v', '--verbose', action='store_true')
+    add_arg('--ranks-per-node', default=8)
     add_arg('--device', default='cpu')
     add_arg('--resume', action='store_true', help='Resume from last checkpoint')
     add_arg('--show-config', action='store_true')
@@ -92,8 +93,12 @@ def main():
         logging.info('Loaded %g validation samples', len(valid_data_loader.dataset))
 
     # Load the trainer
+    device = args.device
+    if device == 'cuda:rank':
+        device = 'cuda:%i' % (rank % args.ranks_per_node)
+    logging.info('Choosing device %s', device)
     trainer = get_trainer(distributed=args.distributed, output_dir=output_dir,
-                          device=args.device, **config['trainer'])
+                          device=device, **config['trainer'])
     # Build the model and optimizer
     trainer.build_model(**config.get('model', {}))
     if rank == 0:
