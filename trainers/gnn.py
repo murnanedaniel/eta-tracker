@@ -26,7 +26,8 @@ class GNNTrainer(BaseTrainer):
         # Construct the model
         self.model = get_model(name=name, **model_args).to(self.device)
         if self.distributed:
-            self.model = nn.parallel.DistributedDataParallelCPU(self.model)
+            self.model = nn.parallel.DistributedDataParallel(self.model,
+                device_ids=[self.gpu], output_device=self.gpu)
         # TODO: LR scaling
         self.optimizer = getattr(torch.optim, optimizer)(
             self.model.parameters(), lr=learning_rate)

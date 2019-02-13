@@ -27,7 +27,8 @@ def parse_args():
     add_arg('-d', '--distributed', action='store_true')
     add_arg('-v', '--verbose', action='store_true')
     add_arg('--ranks-per-node', default=8)
-    add_arg('--device', default='cpu')
+    add_arg('--gpu', type=int)
+    add_arg('--rank-gpu', action='store_true')
     add_arg('--resume', action='store_true', help='Resume from last checkpoint')
     add_arg('--show-config', action='store_true')
     add_arg('--interactive', action='store_true')
@@ -93,12 +94,12 @@ def main():
         logging.info('Loaded %g validation samples', len(valid_data_loader.dataset))
 
     # Load the trainer
-    device = args.device
-    if device == 'cuda:rank':
-        device = 'cuda:%i' % (rank % args.ranks_per_node)
-    logging.info('Choosing device %s', device)
+    gpu = args.gpu
+    if args.rank_gpu:
+        gpu = rank % args.ranks_per_node
+    logging.info('Choosing GPU %s', gpu)
     trainer = get_trainer(distributed=args.distributed, output_dir=output_dir,
-                          device=device, **config['trainer'])
+                          rank=rank, gpu=gpu, **config['trainer'])
     # Build the model and optimizer
     trainer.build_model(**config.get('model', {}))
     if rank == 0:
