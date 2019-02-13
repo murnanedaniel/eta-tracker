@@ -49,11 +49,11 @@ def config_logging(verbose, output_dir, append=False):
 
 def init_workers(distributed=False):
     """Initialize worker process group"""
-    rank, n_ranks = 0, 1
+    rank = int(os.environ['SLURM_PROCID'])
+    n_ranks = int(os.environ['SLURM_NTASKS'])
     if distributed:
-        dist.init_process_group(backend='mpi')
-        rank = dist.get_rank()
-        n_ranks = dist.get_world_size()
+        dist.init_process_group(backend='gloo', world_size=n_ranks, rank=rank,
+                                init_method='file:///tmp/sfarrell/pytorch_sync_file')
     return rank, n_ranks
 
 def load_config(config_file):
