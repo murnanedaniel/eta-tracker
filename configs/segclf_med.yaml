@@ -23,6 +23,9 @@ model:
     learning_rate: 0.001
     lr_scaling: 'linear'
     lr_warmup_epochs: 4
+    lr_decay_schedule:
+        - {start_epoch: 16, end_epoch: 24, factor: .1}
+        - {start_epoch: 24, end_epoch: 32, factor: .01}
 
 training:
     n_epochs: 16
