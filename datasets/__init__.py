@@ -34,7 +34,8 @@ def get_data_loaders(name, batch_size, distributed=False,
     loader_args = dict(batch_size=batch_size, collate_fn=collate_fn,
                        num_workers=n_workers)
     train_sampler = DistributedSampler(train_dataset) if distributed else None
+    valid_sampler = DistributedSampler(valid_dataset) if distributed else None
     train_data_loader = DataLoader(train_dataset, sampler=train_sampler, **loader_args)
-    valid_data_loader = (DataLoader(valid_dataset, **loader_args)
+    valid_data_loader = (DataLoader(valid_dataset, sampler=valid_sampler, **loader_args)
                          if valid_dataset is not None else None)
     return train_data_loader, valid_data_loader
