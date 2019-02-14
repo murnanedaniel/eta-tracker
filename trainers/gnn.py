@@ -2,6 +2,9 @@
 This module defines a generic trainer for simple models and datasets.
 """
 
+# System
+import math
+
 # Externals
 import torch
 from torch import nn
@@ -38,6 +41,11 @@ class GNNTrainer(BaseTrainer):
         if lr_scaling == 'linear':
             learning_rate = learning_rate * self.n_ranks
             warmup_factor = 1. / self.n_ranks
+        elif lr_scaling == 'sqrt':
+            learning_rate = learning_rate * math.sqrt(self.n_ranks)
+            warmup_factor = 1. / math.sqrt(self.n_ranks)
+        else:
+            warmup_factor = 1
         self.optimizer = getattr(torch.optim, optimizer)(
             self.model.parameters(), lr=learning_rate)
 
