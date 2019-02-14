@@ -34,14 +34,14 @@ def parse_args():
     add_arg('--interactive', action='store_true')
     return parser.parse_args()
 
-def config_logging(verbose, output_dir, append=False):
+def config_logging(verbose, output_dir, append=False, rank=0):
     log_format = '%(asctime)s %(levelname)s %(message)s'
     log_level = logging.DEBUG if verbose else logging.INFO
     stream_handler = logging.StreamHandler(stream=sys.stdout)
     stream_handler.setLevel(log_level)
     handlers = [stream_handler]
     if output_dir is not None:
-        log_file = os.path.join(output_dir, 'out.log')
+        log_file = os.path.join(output_dir, 'out_%i.log' % rank)
         mode = 'a' if append else 'w'
         file_handler = logging.FileHandler(log_file, mode=mode)
         file_handler.setLevel(log_level)
@@ -76,13 +76,11 @@ def main():
     # Load configuration
     config = load_config(args.config)
     output_dir = os.path.expandvars(config.get('output_dir', None))
-    if rank == 0:
-        os.makedirs(output_dir, exist_ok=True)
-    else:
-        output_dir = None
+    os.makedirs(output_dir, exist_ok=True)
 
     # Setup logging
-    config_logging(verbose=args.verbose, output_dir=output_dir, append=args.resume)
+    config_logging(verbose=args.verbose, output_dir=output_dir,
+                   append=args.resume, rank=rank)
     logging.info('Initialized rank %i out of %i', rank, n_ranks)
     if args.show_config and (rank == 0):
         logging.info('Command line config: %s' % args)

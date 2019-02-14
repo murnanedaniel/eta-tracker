@@ -55,7 +55,7 @@ class BaseTrainer(object):
         else:
             self.summaries = self.summaries.append([summaries], ignore_index=True)
         if self.output_dir is not None:
-            summary_file = os.path.join(self.output_dir, 'summaries.csv')
+            summary_file = os.path.join(self.output_dir, 'summaries_%i.csv' % self.rank)
             self.summaries.to_csv(summary_file, index=False)
 
     def write_summaries(self):
@@ -77,7 +77,7 @@ class BaseTrainer(object):
         """Load a model checkpoint"""
         assert self.output_dir is not None
         # Load the summaries
-        summary_file = os.path.join(self.output_dir, 'summaries.csv')
+        summary_file = os.path.join(self.output_dir, 'summaries_%i.csv' % self.rank)
         logging.info('Reloading summary at %s', summary_file)
         self.summaries = pd.read_csv(summary_file)
         # Load the checkpoint
@@ -128,7 +128,7 @@ class BaseTrainer(object):
                 summary['valid_time'] = time.time() - start_time
             # Save summary, checkpoint
             self.save_summary(summary)
-            if self.output_dir is not None:
+            if self.output_dir is not None and self.rank == 0:
                 self.write_checkpoint(checkpoint_id=i)
 
         return self.summaries
