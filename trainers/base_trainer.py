@@ -28,6 +28,7 @@ class BaseTrainer(object):
         self.gpu = gpu
         if gpu is not None:
             self.device = 'cuda:%i' % gpu
+            torch.cuda.set_device(gpu)
         else:
             self.device = 'cpu'
         self.distributed = distributed
