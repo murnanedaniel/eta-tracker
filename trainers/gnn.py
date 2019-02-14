@@ -22,7 +22,7 @@ class GNNTrainer(BaseTrainer):
                     loss_func='binary_cross_entropy',
                     optimizer='Adam', learning_rate=0.001,
                     lr_scaling=None, lr_warmup_epochs=0,
-                    lr_decays=[], **model_args):
+                    lr_decay_schedule=[], **model_args):
         """Instantiate our model"""
 
         # Construct the model
@@ -44,7 +44,7 @@ class GNNTrainer(BaseTrainer):
         # LR schedule
         def lr_schedule(epoch, warmup_factor=warmup_factor,
                         warmup_epochs=lr_warmup_epochs,
-                        decays=lr_decays):
+                        decays=lr_decay_schedule):
             if epoch < warmup_epochs:
                 return (1 - warmup_factor) * epoch / warmup_epochs + warmup_factor
             for decay in decays:
