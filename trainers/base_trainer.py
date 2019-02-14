@@ -112,6 +112,10 @@ class BaseTrainer(object):
             start_epoch = self.summaries.epoch.max() + 1
         for i in range(start_epoch, n_epochs):
             self.logger.info('Epoch %i' % i)
+            try:
+                train_data_loader.sampler.set_epoch(i)
+            except AttributeError:
+                pass
             summary = dict(epoch=i)
             # Train on this epoch
             start_time = time.time()
