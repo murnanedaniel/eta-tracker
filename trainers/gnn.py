@@ -84,7 +84,7 @@ class GNNTrainer(BaseTrainer):
             batch_loss.backward()
             self.optimizer.step()
             sum_loss += batch_loss.item()
-            self.logger.debug('  batch %i, loss %f', i, batch_loss.item())
+            self.logger.debug('  train batch %i, loss %f', i, batch_loss.item())
 
         summary['lr'] = self.optimizer.param_groups[0]['lr']
         summary['train_loss'] = sum_loss / (i + 1)
@@ -103,15 +103,16 @@ class GNNTrainer(BaseTrainer):
         sum_total = 0
         # Loop over batches
         for i, (batch_input, batch_target) in enumerate(data_loader):
-            self.logger.debug(' batch %i', i)
             batch_input = [a.to(self.device) for a in batch_input]
             batch_target = batch_target.to(self.device)
             batch_output = self.model(batch_input)
-            sum_loss += self.loss_func(batch_output, batch_target).item()
+            batch_loss = self.loss_func(batch_output, batch_target).item()
+            sum_loss += batch_loss
             # Count number of correct predictions
             matches = ((batch_output > 0.5) == (batch_target > 0.5))
             sum_correct += matches.sum().item()
             sum_total += matches.numel()
+            self.logger.debug(' valid batch %i, loss %.4f', i, batch_loss)
         summary['valid_loss'] = sum_loss / (i + 1)
         summary['valid_acc'] = sum_correct / sum_total
         self.logger.debug(' Processed %i samples in %i batches',

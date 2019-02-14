@@ -47,6 +47,8 @@ def config_logging(verbose, output_dir, append=False):
         file_handler.setLevel(log_level)
         handlers.append(file_handler)
     logging.basicConfig(level=log_level, format=log_format, handlers=handlers)
+    # Suppress annoying matplotlib debug printouts
+    logging.getLogger('matplotlib').setLevel(logging.ERROR)
 
 def init_workers(distributed=False):
     """Initialize worker process group"""
