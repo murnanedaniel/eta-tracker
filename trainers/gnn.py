@@ -22,7 +22,7 @@ class GNNTrainer(BaseTrainer):
                     loss_func='binary_cross_entropy',
                     optimizer='Adam', learning_rate=0.001,
                     lr_scaling=None, lr_warmup_epochs=0,
-                    **model_args):
+                    lr_decays=[], **model_args):
         """Instantiate our model"""
 
         # Construct the model
@@ -41,17 +41,21 @@ class GNNTrainer(BaseTrainer):
         self.optimizer = getattr(torch.optim, optimizer)(
             self.model.parameters(), lr=learning_rate)
 
-        # LR ramp warmup schedule
-        def lr_warmup(epoch, warmup_factor=warmup_factor,
-                      warmup_epochs=lr_warmup_epochs):
+        # LR schedule
+        def lr_schedule(epoch, warmup_factor=warmup_factor,
+                        warmup_epochs=lr_warmup_epochs,
+                        decays=lr_decays):
             if epoch < warmup_epochs:
                 return (1 - warmup_factor) * epoch / warmup_epochs + warmup_factor
+            for decay in decays:
+                if epoch >= decay['start_epoch'] and epoch < decay['end_epoch']:
+                    return decay['factor']
             else:
                 return 1
 
         # LR schedule
         self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-            self.optimizer, lr_warmup)
+            self.optimizer, lr_schedule)
 
     def write_checkpoint(self, checkpoint_id):
         super(GNNTrainer, self).write_checkpoint(
