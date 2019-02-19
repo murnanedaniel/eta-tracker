@@ -4,6 +4,8 @@ data_config:
     n_valid: 1024
     batch_size: 128
 
+output_dir: ./output
+
 experiment_config:
     name: hello
 

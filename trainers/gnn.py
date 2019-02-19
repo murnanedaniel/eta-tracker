@@ -10,6 +10,8 @@ import torch
 from torch import nn
 from torch.optim.lr_scheduler import LambdaLR
 
+import ml_comm_torch as cdl
+
 # Locals
 from .base_trainer import BaseTrainer
 from models import get_model
@@ -31,9 +33,9 @@ class GNNTrainer(BaseTrainer):
 
         # Construct the model
         self.model = get_model(name=name, **model_args).to(self.device)
-        if self.distributed:
+        # if self.distributed:
             # Wrap in the PyTorch distributed wrapper
-            self.model = nn.parallel.DistributedDataParallelCPU(self.model)
+            # self.model = nn.parallel.DistributedDataParallelCPU(self.model)
 
         # Construct the loss function
         self.loss_func = getattr(nn.functional, loss_func)
@@ -44,6 +46,21 @@ class GNNTrainer(BaseTrainer):
             warmup_factor = 1. / n_ranks
         self.optimizer = getattr(torch.optim, optimizer)(
             self.model.parameters(), lr=learning_rate)
+
+        # CRAY ADDED - wrap the optimizer in order to use the 
+        # Plugin's communication. It's
+        #  completed as part of the base optimizer's step() method.
+        # nsteps = len(train_sampler) # Number of steps training will go on for
+        nsteps = 32768 # Number of steps training will go on for
+        nteams = 1 # number of teams you'll be training
+        nthreads = 2 # number of communication threads
+        warmup = 0.10 #warm up first 10% of training
+        verb = 2 # maximum verbosity
+        freq = 1 # number of steps before outputing verbosity output
+        if cdl.get_rank() == 0:
+            print("Completing ", nsteps, " steps")
+        self.optimizer = cdl.DistributedOptimizer(self.optimizer, nsteps, 
+                         nteams, nthreads, warmup, verb, freq)
 
         # LR ramp warmup schedule
         def lr_warmup(epoch, warmup_factor=warmup_factor,
@@ -75,6 +92,7 @@ class GNNTrainer(BaseTrainer):
             batch_output = self.model(batch_input)
             batch_loss = self.loss_func(batch_output, batch_target, weight=batch_weights)
             batch_loss.backward()
+            # self.logger.info('Before optimizer step batch %i', i)
             self.optimizer.step()
             sum_loss += batch_loss.item()
             self.logger.debug('  batch %i, loss %f', i, batch_loss.item())

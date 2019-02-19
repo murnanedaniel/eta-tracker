@@ -1,6 +1,7 @@
 """
 PyTorch dataset specifications.
 """
+import ml_comm_torch as cdl
 
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
@@ -33,7 +34,10 @@ def get_data_loaders(name, batch_size, distributed=False,
     # Construct the data loaders
     loader_args = dict(batch_size=batch_size, collate_fn=collate_fn,
                        num_workers=n_workers)
-    train_sampler = DistributedSampler(train_dataset) if distributed else None
+    # train_sampler = DistributedSampler(train_dataset) if distributed else None
+    train_sampler = DistributedSampler(train_dataset,
+                             num_replicas=cdl.get_nranks(), 
+                             rank=cdl.get_rank()) if distributed else None
     train_data_loader = DataLoader(train_dataset, sampler=train_sampler, **loader_args)
     valid_data_loader = (DataLoader(valid_dataset, **loader_args)
                          if valid_dataset is not None else None)

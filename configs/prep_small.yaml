@@ -1,5 +1,5 @@
 # Input/output configuration
-input_dir: /global/cscratch1/sd/sfarrell/trackml/train_all
+input_dir: /lus/scratch/aheye/data/trackml/train_all
 output_dir: /global/cscratch1/sd/sfarrell/heptrkx/data/hitgraphs_small_000
 n_files: 8192
 
