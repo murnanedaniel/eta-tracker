@@ -31,6 +31,15 @@ def parse_args():
     add_arg('--device', default='cpu')
     add_arg('--show-config', action='store_true')
     add_arg('--interactive', action='store_true')
+    add_arg('--crayai-hpo', action='store_true')
+    ## Unused if crayai-hpo is not set!!
+    add_arg('--hidden_dim', type=int, default=None)
+    add_arg('--n_iters', type=int, default=None)
+    add_arg('--loss_func', type=str, default=None)
+    add_arg('--optimizer', type=str, default=None)
+    add_arg('--learning_rate', type=float, default=None)
+    add_arg('--lr_scaling', type=str, default=None)
+    add_arg('--lr_warmup_epochs', type=int, default=None) 
     return parser.parse_args()
 
 def config_logging(verbose, output_dir):
@@ -58,6 +67,18 @@ def load_config(config_file):
     with open(config_file) as f:
         return yaml.load(f)
 
+def update_config(config, args):
+    hpo_args = ["hidden_dim",
+                "n_iters",
+                "loss_func", 
+                "optimizer",
+                "learning_rate",
+                "lr_scaling"]
+    args_dict = vars(args)
+    for key in args_dict.keys():
+        if key in hpo_args and args_dict[key] is not None:
+            config['model'][key] = args_dict[key]
+
 def main():
     """Main function"""
 
@@ -69,8 +90,13 @@ def main():
     rank = cdl.get_rank()
     n_ranks = cdl.get_nranks()
 
+    import torch
+    if torch.cuda.is_available():
+        print("INFO: Found CUDA")
     # Load configuration
     config = load_config(args.config)
+    if args.crayai_hpo:
+        update_config(config, args)
     output_dir = os.path.expandvars(config.get('output_dir', None))
     if rank == 0:
         os.makedirs(output_dir, exist_ok=True)
@@ -129,6 +155,8 @@ def main():
         IPython.embed()
 
     if rank == 0:
+        if args.crayai_hpo:
+            print("FoM: %e" % (1.0 - summary['valid_acc']))
         logging.info('All done!')
 
 if __name__ == '__main__':
