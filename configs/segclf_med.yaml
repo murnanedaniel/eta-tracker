@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_med_006
+output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_med_007
 
 trainer:
     name: gnn
