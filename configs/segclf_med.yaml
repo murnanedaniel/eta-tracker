@@ -20,7 +20,7 @@ model:
     n_iters: 4
     loss_func: 'binary_cross_entropy'
     optimizer: 'Adam'
-    learning_rate: 0.0001
+    learning_rate: 0.001
     lr_scaling: 'linear'
     lr_warmup_epochs: 4
     lr_decay_schedule:
