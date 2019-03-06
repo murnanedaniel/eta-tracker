@@ -18,6 +18,10 @@ class EdgeNetwork(nn.Module):
         self.network = nn.Sequential(
             nn.Linear(input_dim*2, hidden_dim),
             hidden_activation(),
+            nn.Linear(hidden_dim, hidden_dim),
+            hidden_activation(),
+            nn.Linear(hidden_dim, hidden_dim),
+            hidden_activation(),
             nn.Linear(hidden_dim, 1),
             nn.Sigmoid())
     def forward(self, X, Ri, Ro):
@@ -42,6 +46,11 @@ class NodeNetwork(nn.Module):
             nn.Linear(input_dim*3, output_dim),
             hidden_activation(),
             nn.Linear(output_dim, output_dim),
+            hidden_activation(),
+            nn.Linear(output_dim, output_dim),
+            hidden_activation(),
+            nn.Linear(output_dim, output_dim),
+            nn.LayerNorm(output_dim),
             hidden_activation())
     def forward(self, X, e, Ri, Ro):
         bo = torch.bmm(Ro.transpose(1, 2), X)
