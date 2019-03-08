@@ -10,9 +10,6 @@
 config=configs/segclf_big.yaml
 mkdir -p logs
 
-# Temporarily use project instead of scratch
-export SCRATCH=/project/projectdirs/nstaff/sfarrell
-
 # Setup software
 module load pytorch/v1.0.0-gpu
 
