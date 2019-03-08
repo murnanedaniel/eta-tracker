@@ -17,12 +17,16 @@ class EdgeNetwork(nn.Module):
         super(EdgeNetwork, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_dim*2, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             hidden_activation(),
             nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             hidden_activation(),
             nn.Linear(hidden_dim, hidden_dim),
+            nn.LayerNorm(hidden_dim),
             hidden_activation(),
             nn.Linear(hidden_dim, 1),
+            nn.LayerNorm(hidden_dim),
             nn.Sigmoid())
     def forward(self, X, Ri, Ro):
         # Select the features of the associated nodes
@@ -44,10 +48,13 @@ class NodeNetwork(nn.Module):
         super(NodeNetwork, self).__init__()
         self.network = nn.Sequential(
             nn.Linear(input_dim*3, output_dim),
+            nn.LayerNorm(output_dim),
             hidden_activation(),
             nn.Linear(output_dim, output_dim),
+            nn.LayerNorm(output_dim),
             hidden_activation(),
             nn.Linear(output_dim, output_dim),
+            nn.LayerNorm(output_dim),
             hidden_activation(),
             nn.Linear(output_dim, output_dim),
             nn.LayerNorm(output_dim),
