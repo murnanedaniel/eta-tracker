@@ -26,7 +26,6 @@ class EdgeNetwork(nn.Module):
             nn.LayerNorm(hidden_dim),
             hidden_activation(),
             nn.Linear(hidden_dim, 1),
-            nn.LayerNorm(hidden_dim),
             nn.Sigmoid())
     def forward(self, X, Ri, Ro):
         # Select the features of the associated nodes
