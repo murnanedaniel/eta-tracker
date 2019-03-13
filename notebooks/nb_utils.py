@@ -93,13 +93,14 @@ def compute_metrics(preds, targets, threshold=0.5):
                    prc_precision=prc_precision, prc_recall=prc_recall, prc_thresh=prc_thresh,
                    roc_fpr=roc_fpr, roc_tpr=roc_tpr, roc_thresh=roc_thresh, roc_auc=roc_auc)
 
-def plot_train_history(summaries, figsize=(12, 5)):
+def plot_train_history(summaries, figsize=(12, 5), loss_yscale='linear'):
     fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=figsize)
 
     # Plot losses
     ax0.plot(summaries.epoch, summaries.train_loss, label='Train')
     ax0.plot(summaries.epoch, summaries.valid_loss, label='Validation')
-    ax0.set_xlabel('Epoch', )
+    ax0.set_yscale(loss_yscale)
+    ax0.set_xlabel('Epoch')
     ax0.set_ylabel('Loss')
     ax0.legend(loc=0)
 
