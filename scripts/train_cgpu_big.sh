@@ -4,7 +4,7 @@
 #SBATCH -C gpu
 #SBATCH --cpus-per-task=10
 #SBATCH --gres=gpu:1
-#SBATCH -t 2:00:00
+#SBATCH -t 1:40:00
 #SBATCH -o logs/%x-%j.out
 
 config=configs/segclf_big.yaml

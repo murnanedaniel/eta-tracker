@@ -23,4 +23,4 @@ model:
     learning_rate: 0.001
 
 training:
-    n_epochs: 32
+    n_epochs: 64
