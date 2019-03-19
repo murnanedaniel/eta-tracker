@@ -40,6 +40,9 @@ def parse_args():
     add_arg('--learning_rate', type=float, default=None)
     add_arg('--lr_scaling', type=str, default=None)
     add_arg('--lr_warmup_epochs', type=int, default=None) 
+    # Model Checkpointing (useful for PBT)
+    add_arg('--load_model', type=str, default=None)
+    add_arg('--save_model', type=str, default=None)
     return parser.parse_args()
 
 def config_logging(verbose, output_dir):
@@ -86,8 +89,11 @@ def main():
     args = parse_args()
     # Initialize MPI
     # rank, n_ranks = init_workers(args.distributed)
+    print("Init_mpi")
     cdl.init_mpi()
+    print("get_rank")
     rank = cdl.get_rank()
+    print("get_nranks")
     n_ranks = cdl.get_nranks()
 
     import torch
@@ -124,7 +130,9 @@ def main():
     trainer = get_trainer(distributed=args.distributed, output_dir=output_dir,
                           device=args.device, **config['trainer'])
     # Build the model and optimizer
-    trainer.build_model(n_ranks=n_ranks, **config.get('model', {}))
+    if args.load_model is not None and not os.path.isfile(args.load_model):
+        args.load_model = None
+    trainer.build_model(n_ranks=n_ranks, **config.get('model', {}), load_model=args.load_model)
     if rank == 0:
         trainer.print_model_summary()
 
@@ -155,8 +163,10 @@ def main():
         IPython.embed()
 
     if rank == 0:
+        if args.save_model is not None:
+            trainer.save_model(args.save_model)
         if args.crayai_hpo:
-            print("FoM: %e" % (1.0 - summary['valid_acc']))
+            print("FoM: %e" % (1.0 - np.mean(summary['valid_acc'])))
         logging.info('All done!')
 
 if __name__ == '__main__':

@@ -28,11 +28,15 @@ class GNNTrainer(BaseTrainer):
                     loss_func='binary_cross_entropy',
                     optimizer='Adam', learning_rate=0.001,
                     n_ranks=1, lr_scaling=None, lr_warmup_epochs=0,
+                    load_model=None,
                     **model_args):
         """Instantiate our model"""
 
         # Construct the model
-        self.model = get_model(name=name, **model_args).to(self.device)
+        if load_model is None:
+            self.model = get_model(name=name, **model_args).to(self.device)
+        else:
+            self.model = torch.load(load_model)
         # if self.distributed:
             # Wrap in the PyTorch distributed wrapper
             # self.model = nn.parallel.DistributedDataParallelCPU(self.model)
@@ -137,6 +141,9 @@ class GNNTrainer(BaseTrainer):
         self.logger.info('  Validation loss: %.3f acc: %.3f' %
                          (summary['valid_loss'], summary['valid_acc']))
         return summary
+
+    def save_model(self, path):
+        torch.save(self.model, path)
 
 def _test():
     t = GNNTrainer(output_dir='./')

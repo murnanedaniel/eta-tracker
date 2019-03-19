@@ -7,8 +7,8 @@ trainer:
 
 data:
     name: hitgraphs
-    input_dir: /lus/scratch/aheye/data/heptrkx/hitgraphs/hitgraphs_med_002
-    n_train: 256 #8192
+    input_dir: /lus/snx11254/aheye/data/heptrkx/hitgraphs/hitgraphs_med_002
+    n_train: 8192
     n_valid: 128
     batch_size: 1
     #n_workers: 4 # seg fault when distributed...
@@ -25,4 +25,4 @@ model:
     lr_warmup_epochs: 2
 
 training:
-    n_epochs: 4
+    n_epochs: 10
