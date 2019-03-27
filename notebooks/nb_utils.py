@@ -44,7 +44,7 @@ def load_model(config, reload_epoch):
     model_config.pop('lr_scaling', None)
     model_config.pop('lr_warmup_epochs', None)
     model = get_model(**model_config)
-    
+
     # Reload specified model checkpoint
     output_dir = get_output_dir(config)
     checkpoint_file = os.path.join(output_dir, 'checkpoints',
@@ -113,6 +113,37 @@ def plot_train_history(summaries, figsize=(12, 5), loss_yscale='linear'):
 
     plt.tight_layout()
 
+def plot_metrics(preds, targets, metrics):
+    # Prepare the values
+    preds = np.concatenate(preds)
+    targets = np.concatenate(targets)
+    labels = targets > 0.5
+
+    # Create the figure
+    fig, (ax0, ax1, ax2) = plt.subplots(ncols=3, figsize=(16,5))
+
+    # Plot the model outputs
+    binning=dict(bins=25, range=(0,1), histtype='step', log=True)
+    ax0.hist(preds[labels==False], label='fake', **binning)
+    ax0.hist(preds[labels==True], label='real', **binning)
+    ax0.set_xlabel('Model output')
+    ax0.legend(loc=0)
+
+    # Plot precision and recall
+    ax1.plot(metrics.prc_thresh, metrics.prc_precision[:-1], label='purity')
+    ax1.plot(metrics.prc_thresh, metrics.prc_recall[:-1], label='efficiency')
+    ax1.set_xlabel('Model threshold')
+    ax1.legend(loc=0)
+
+    # Plot the ROC curve
+    ax2.plot(metrics.roc_fpr, metrics.roc_tpr)
+    ax2.plot([0, 1], [0, 1], '--')
+    ax2.set_xlabel('False positive rate')
+    ax2.set_ylabel('True positive rate')
+    ax2.set_title('ROC curve, AUC = %.3f' % metrics.roc_auc)
+
+    plt.tight_layout()
+
 def plot_outputs_roc(preds, targets, metrics):
     # Prepare the values
     preds = np.concatenate(preds)
@@ -121,14 +152,14 @@ def plot_outputs_roc(preds, targets, metrics):
 
     # Create the figure
     fig, (ax0, ax1) = plt.subplots(ncols=2, figsize=(12,5))
-    
+
     # Plot the model outputs
     binning=dict(bins=25, range=(0,1), histtype='step', log=True)
     ax0.hist(preds[labels==False], label='fake', **binning)
     ax0.hist(preds[labels==True], label='real', **binning)
     ax0.set_xlabel('Model output')
     ax0.legend(loc=0)
-    
+
     # Plot the ROC curve
     ax1.plot(metrics.roc_fpr, metrics.roc_tpr)
     ax1.plot([0, 1], [0, 1], '--')
@@ -141,7 +172,7 @@ def draw_sample(X, Ri, Ro, y, cmap='bwr_r', alpha_labels=True, figsize=(15, 7)):
     # Select the i/o node features for each segment
     feats_o = X[np.where(Ri.T)[1]]
     feats_i = X[np.where(Ro.T)[1]]
-    
+
     # Prepare the figure
     fig, (ax0, ax1) = plt.subplots(1, 2, figsize=figsize)
     cmap = plt.get_cmap(cmap)
@@ -149,7 +180,7 @@ def draw_sample(X, Ri, Ro, y, cmap='bwr_r', alpha_labels=True, figsize=(15, 7)):
     # Draw the hits (r, phi, z)
     ax0.scatter(X[:,2], X[:,0], c='k')
     ax1.scatter(X[:,1], X[:,0], c='k')
-    
+
     # Draw the segments
     for j in range(y.shape[0]):
         if alpha_labels:
