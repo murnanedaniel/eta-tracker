@@ -27,6 +27,12 @@ def get_data_loaders(name, batch_size, distributed=False,
         from . import hitgraphs
         train_dataset, valid_dataset = hitgraphs.get_datasets(**data_args)
         collate_fn = hitgraphs.collate_fn
+    elif name == 'hitgraphs_sparse':
+        from torch_geometric.data import Batch
+        from . import hitgraphs_sparse
+        train_dataset, valid_dataset = hitgraphs_sparse.get_datasets(**data_args)
+        collate_fn = Batch.from_data_list
+
     else:
         raise Exception('Dataset %s unknown' % name)
 
