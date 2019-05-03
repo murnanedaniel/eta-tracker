@@ -12,5 +12,8 @@ def get_model(name, **model_args):
     elif name == 'gnn_segment_classifier':
         from .gnn import GNNSegmentClassifier
         return GNNSegmentClassifier(**model_args)
+    elif name == 'gnn_sparse':
+        from .gnn_sparse import GNNSegmentClassifier
+        return GNNSegmentClassifier(**model_args)
     else:
         raise Exception('Model %s unknown' % name)
