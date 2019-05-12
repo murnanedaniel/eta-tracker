@@ -65,9 +65,7 @@ class GNN(nn.Module):
         self.edge_classifier = nn.Sequential(
             nn.Linear(2*hidden_node_dim, hidden_edge_dim),
             nn.ReLU(),
-            nn.Linear(hidden_edge_dim, 1),
-            # TODO: I could probably drop this and fold into loss
-            nn.Sigmoid()
+            nn.Linear(hidden_edge_dim, 1)
         )
 
     def forward(self, data):

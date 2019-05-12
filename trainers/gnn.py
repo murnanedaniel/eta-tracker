@@ -22,7 +22,7 @@ class GNNTrainer(BaseTrainer):
         self.fake_weight = fake_weight
 
     def build_model(self, name='gnn_segment_classifier',
-                    loss_func='binary_cross_entropy',
+                    loss_func='binary_cross_entropy_with_logits',
                     optimizer='Adam', learning_rate=0.001,
                     lr_scaling=None, lr_warmup_epochs=0,
                     lr_decay_schedule=[], **model_args):
@@ -121,7 +121,8 @@ class GNNTrainer(BaseTrainer):
             batch_loss = self.loss_func(batch_output, batch_target).item()
             sum_loss += batch_loss
             # Count number of correct predictions
-            matches = ((batch_output > 0.5) == (batch_target > 0.5))
+            batch_pred = torch.sigmoid(batch_output)
+            matches = ((batch_pred > 0.5) == (batch_target > 0.5))
             sum_correct += matches.sum().item()
             sum_total += matches.numel()
             self.logger.debug(' valid batch %i, loss %.4f', i, batch_loss)

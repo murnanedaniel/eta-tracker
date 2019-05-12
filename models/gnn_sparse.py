@@ -30,8 +30,7 @@ class EdgeNetwork(nn.Module):
             nn.Linear(hidden_dim, hidden_dim),
             nn.LayerNorm(hidden_dim),
             hidden_activation(),
-            nn.Linear(hidden_dim, 1),
-            nn.Sigmoid())
+            nn.Linear(hidden_dim, 1))
     def forward(self, x, edge_index):
         # Select the features of the associated nodes
         start, end = edge_index
@@ -99,7 +98,7 @@ class GNNSegmentClassifier(nn.Module):
         # Loop over iterations of edge and node networks
         for i in range(self.n_iters):
             # Apply edge network
-            e = self.edge_network(x, inputs.edge_index)
+            e = torch.sigmoid(self.edge_network(x, inputs.edge_index))
             # Apply node network
             x = self.node_network(x, e, inputs.edge_index)
             # Shortcut connect the inputs onto the hidden representation
