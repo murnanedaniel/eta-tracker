@@ -10,10 +10,10 @@ def get_model(name, **model_args):
         from .cnn_classifier import CNNClassifier
         return CNNClassifier(**model_args)
     elif name == 'gnn_segment_classifier':
-        from .gnn import GNNSegmentClassifier
+        from .agnn_original import GNNSegmentClassifier
         return GNNSegmentClassifier(**model_args)
     elif name == 'gnn_sparse':
-        from .gnn_sparse import GNNSegmentClassifier
+        from .agnn import GNNSegmentClassifier
         return GNNSegmentClassifier(**model_args)
     elif name == 'mpnn':
         from .mpnn import GNN
