@@ -6,10 +6,10 @@ def get_model(name, **model_args):
     """
     Top-level factory function for getting your models.
     """
-    if name == 'gnn_segment_classifier':
+    if name == 'agnn_original':
         from .agnn_original import GNNSegmentClassifier
         return GNNSegmentClassifier(**model_args)
-    elif name == 'gnn_sparse':
+    elif name == 'agnn':
         from .agnn import GNNSegmentClassifier
         return GNNSegmentClassifier(**model_args)
     elif name == 'mpnn':

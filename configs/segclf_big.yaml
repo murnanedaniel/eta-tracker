@@ -14,7 +14,7 @@ data:
     n_workers: 4
 
 model:
-    name: 'gnn_segment_classifier'
+    name: 'agnn_original'
     input_dim: 3
     hidden_dim: 64
     n_iters: 8
