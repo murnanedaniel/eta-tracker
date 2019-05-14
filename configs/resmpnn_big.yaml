@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/resepnn_big_001
+output_dir: ${SCRATCH}/heptrkx/results/resmpnn_big_002
 
 trainer:
     name: gnn_sparse

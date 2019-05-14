@@ -29,6 +29,8 @@ class GNN(nn.Module):
         # The node encoder transforms input node features to the hidden space
         self.node_encoder = nn.Sequential(
             nn.Linear(input_dim, hidden_node_dim),
+            nn.ReLU(),
+            nn.Linear(hidden_node_dim, hidden_node_dim),
             nn.ReLU()
         )
         # The edge network computes new edge features from connected nodes
