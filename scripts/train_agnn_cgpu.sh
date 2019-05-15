@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J cgpu-agnn-big
+#SBATCH -J agnn-big-cgpu
 #SBATCH -N 1
 #SBATCH -C gpu
 #SBATCH --gres=gpu:1
