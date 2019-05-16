@@ -6,10 +6,13 @@ and supporting libraries:
 https://github.com/rusty1s/pytorch_geometric
 """
 
+# Externals
 import torch
 import torch.nn as nn
 from torch_scatter import scatter_add
 
+# Locals
+from .utils import make_mlp
 
 class EdgeNetwork(nn.Module):
     """
@@ -20,17 +23,12 @@ class EdgeNetwork(nn.Module):
     """
     def __init__(self, input_dim, hidden_dim=8, hidden_activation=nn.Tanh):
         super(EdgeNetwork, self).__init__()
-        self.network = nn.Sequential(
-            nn.Linear(input_dim*2, hidden_dim),
-            nn.LayerNorm(hidden_dim),
-            hidden_activation(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.LayerNorm(hidden_dim),
-            hidden_activation(),
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.LayerNorm(hidden_dim),
-            hidden_activation(),
-            nn.Linear(hidden_dim, 1))
+        self.network = make_mlp(input_dim*2,
+                                [hidden_dim, hidden_dim, hidden_dim, 1],
+                                hidden_activation=hidden_activation,
+                                output_activation=None,
+                                layer_norm=True)
+
     def forward(self, x, edge_index):
         # Select the features of the associated nodes
         start, end = edge_index
@@ -48,19 +46,10 @@ class NodeNetwork(nn.Module):
     """
     def __init__(self, input_dim, output_dim, hidden_activation=nn.Tanh):
         super(NodeNetwork, self).__init__()
-        self.network = nn.Sequential(
-            nn.Linear(input_dim*3, output_dim),
-            nn.LayerNorm(output_dim),
-            hidden_activation(),
-            nn.Linear(output_dim, output_dim),
-            nn.LayerNorm(output_dim),
-            hidden_activation(),
-            nn.Linear(output_dim, output_dim),
-            nn.LayerNorm(output_dim),
-            hidden_activation(),
-            nn.Linear(output_dim, output_dim),
-            nn.LayerNorm(output_dim),
-            hidden_activation())
+        self.network = make_mlp(input_dim*3, [output_dim]*4,
+                                hidden_activation=hidden_activation,
+                                output_activation=hidden_activation,
+                                layer_norm=True)
 
     def forward(self, x, e, edge_index):
         start, end = edge_index
@@ -79,9 +68,8 @@ class GNNSegmentClassifier(nn.Module):
         super(GNNSegmentClassifier, self).__init__()
         self.n_iters = n_iters
         # Setup the input network
-        self.input_network = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim),
-            hidden_activation())
+        self.input_network = make_mlp(input_dim, [hidden_dim],
+                                      output_activation=hidden_activation)
         # Setup the edge network
         self.edge_network = EdgeNetwork(input_dim+hidden_dim, hidden_dim,
                                         hidden_activation)

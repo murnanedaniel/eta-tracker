@@ -3,9 +3,13 @@ Module containing a pytorch graph network implementation modeled after
 DeepMind's InteractionNetwork with Residual connections.
 """
 
+# Externals
 import torch
 import torch.nn as nn
 from torch_scatter import scatter_add
+
+# Locals
+from .utils import make_mlp
 
 
 class GNN(nn.Module):
@@ -27,46 +31,22 @@ class GNN(nn.Module):
         self.n_graph_iters = n_graph_iters
 
         # The node encoder transforms input node features to the hidden space
-        self.node_encoder = nn.Sequential(
-            nn.Linear(input_dim, hidden_node_dim),
-            nn.ReLU()
-        )
+        self.node_encoder = make_mlp(input_dim, [hidden_node_dim])
+
         # The edge network computes new edge features from connected nodes
-        self.edge_network = nn.Sequential(
-            nn.Linear(2*hidden_node_dim, hidden_edge_dim),
-            nn.LayerNorm(hidden_edge_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_edge_dim, hidden_edge_dim),
-            nn.LayerNorm(hidden_edge_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_edge_dim, hidden_edge_dim),
-            nn.LayerNorm(hidden_edge_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_edge_dim, hidden_edge_dim),
-            nn.LayerNorm(hidden_edge_dim),
-            nn.ReLU(),
-        )
+        self.edge_network = make_mlp(2*hidden_node_dim,
+                                     [hidden_edge_dim]*4,
+                                     layer_norm=True)
+
         # The node network computes new node features
-        self.node_network = nn.Sequential(
-            nn.Linear(hidden_node_dim + hidden_edge_dim, hidden_node_dim),
-            nn.LayerNorm(hidden_node_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_node_dim, hidden_node_dim),
-            nn.LayerNorm(hidden_node_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_node_dim, hidden_node_dim),
-            nn.LayerNorm(hidden_node_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_node_dim, hidden_node_dim),
-            nn.LayerNorm(hidden_node_dim),
-            nn.ReLU(),
-        )
+        self.node_network = make_mlp(hidden_node_dim + hidden_edge_dim,
+                                     [hidden_node_dim]*4,
+                                     layer_norm=True)
+
         # The edge classifier computes final edge scores
-        self.edge_classifier = nn.Sequential(
-            nn.Linear(2*hidden_node_dim, hidden_edge_dim),
-            nn.ReLU(),
-            nn.Linear(hidden_edge_dim, 1)
-        )
+        self.edge_classifier = make_mlp(2*hidden_node_dim,
+                                        [hidden_edge_dim, 1],
+                                        output_activation=None)
 
     def forward(self, data):
         # Make every edge bi-directional
