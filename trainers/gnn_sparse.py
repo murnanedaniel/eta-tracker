@@ -16,10 +16,8 @@ from models import get_model
 class GNNTrainer(BaseTrainer):
     """Trainer code for basic classification problems."""
 
-    def __init__(self, real_weight=1, fake_weight=1, **kwargs):
+    def __init__(self, **kwargs):
         super(GNNTrainer, self).__init__(**kwargs)
-        self.real_weight = real_weight
-        self.fake_weight = fake_weight
 
     def build_model(self, name='gnn_sparse',
                     loss_func='binary_cross_entropy_with_logits',
@@ -85,13 +83,9 @@ class GNNTrainer(BaseTrainer):
         # Loop over training batches
         for i, batch in enumerate(data_loader):
             batch = batch.to(self.device)
-            # Compute target weights on-the-fly for loss function
-            batch_weights_real = batch.y * self.real_weight
-            batch_weights_fake = (1 - batch.y) * self.fake_weight
-            batch_weights = batch_weights_real + batch_weights_fake
             self.model.zero_grad()
             batch_output = self.model(batch)
-            batch_loss = self.loss_func(batch_output, batch.y, weight=batch_weights)
+            batch_loss = self.loss_func(batch_output, batch.y, weight=batch.w)
             batch_loss.backward()
             self.optimizer.step()
             sum_loss += batch_loss.item()

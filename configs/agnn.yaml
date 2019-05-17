@@ -2,14 +2,13 @@ output_dir: ${SCRATCH}/heptrkx/results/agnn_000
 
 trainer:
     name: gnn_sparse
-    real_weight: 6.25  # 0.5 / 0.08
-    fake_weight: 0.54  # 0.5 / 0.92
 
 data:
     name: hitgraphs_sparse
     input_dir: ${SCRATCH}/heptrkx/data/hitgraphs_high_000
     n_train: 32768
     n_valid: 4096
+    real_weight: 6.25  # 0.5 / 0.08
     batch_size: 1
     n_workers: 4
 
