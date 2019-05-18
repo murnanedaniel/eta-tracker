@@ -5,7 +5,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=30GB
-#SBATCH -t 4:00:00
+#SBATCH -t 8:00:00
 #SBATCH -o logs/%x-%j.out
 
 # Setup
