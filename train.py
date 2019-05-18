@@ -11,20 +11,20 @@ import logging
 # Externals
 import yaml
 import numpy as np
-import torch.distributed as dist
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
 # Locals
 from datasets import get_data_loaders
 from trainers import get_trainer
+from utils import distributed as dist
 
 def parse_args():
     """Parse command line arguments."""
     parser = argparse.ArgumentParser('train.py')
     add_arg = parser.add_argument
     add_arg('config', nargs='?', default='configs/hello.yaml')
-    add_arg('-d', '--distributed', action='store_true')
+    add_arg('-d', '--distributed', choices=['file', 'mpi', 'cray'])
     add_arg('-v', '--verbose', action='store_true')
     add_arg('--ranks-per-node', default=8)
     add_arg('--gpu', type=int)
@@ -50,16 +50,14 @@ def config_logging(verbose, output_dir, append=False, rank=0):
     # Suppress annoying matplotlib debug printouts
     logging.getLogger('matplotlib').setLevel(logging.ERROR)
 
-def init_workers(distributed=False):
+def init_workers(dist_mode):
     """Initialize worker process group"""
-    rank = int(os.environ['SLURM_PROCID'])
-    n_ranks = int(os.environ['SLURM_NTASKS'])
-    if distributed:
-        sync_file = 'file:///tmp/%s_%s_pytorch_sync' % (
-            os.environ['USER'], os.environ['SLURM_JOB_ID'])
-        dist.init_process_group(backend='nccl', world_size=n_ranks, rank=rank,
-                                init_method=sync_file)
-    return rank, n_ranks
+    if dist_mode == 'file':
+        return dist.init_workers_file()
+    elif dist_mode == 'mpi':
+        return dist.init_workers_mpi()
+        pass
+    return 0, 1
 
 def load_config(config_file):
     with open(config_file) as f:
