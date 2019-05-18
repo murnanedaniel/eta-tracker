@@ -21,13 +21,14 @@ class EdgeNetwork(nn.Module):
     and applies some fully-connected network layers with a final
     sigmoid activation.
     """
-    def __init__(self, input_dim, hidden_dim=8, hidden_activation=nn.Tanh):
+    def __init__(self, input_dim, hidden_dim=8, hidden_activation=nn.Tanh,
+                 layer_norm=True):
         super(EdgeNetwork, self).__init__()
         self.network = make_mlp(input_dim*2,
                                 [hidden_dim, hidden_dim, hidden_dim, 1],
                                 hidden_activation=hidden_activation,
                                 output_activation=None,
-                                layer_norm=True)
+                                layer_norm=layer_norm)
 
     def forward(self, x, edge_index):
         # Select the features of the associated nodes
@@ -44,12 +45,13 @@ class NodeNetwork(nn.Module):
     them with the node's previous features in a fully-connected
     network to compute the new features.
     """
-    def __init__(self, input_dim, output_dim, hidden_activation=nn.Tanh):
+    def __init__(self, input_dim, output_dim, hidden_activation=nn.Tanh,
+                 layer_norm=True):
         super(NodeNetwork, self).__init__()
         self.network = make_mlp(input_dim*3, [output_dim]*4,
                                 hidden_activation=hidden_activation,
                                 output_activation=hidden_activation,
-                                layer_norm=True)
+                                layer_norm=layer_norm)
 
     def forward(self, x, e, edge_index):
         start, end = edge_index
@@ -64,18 +66,20 @@ class GNNSegmentClassifier(nn.Module):
     Segment classification graph neural network model.
     Consists of an input network, an edge network, and a node network.
     """
-    def __init__(self, input_dim=3, hidden_dim=8, n_iters=3, hidden_activation=nn.Tanh):
+    def __init__(self, input_dim=3, hidden_dim=8, n_iters=3,
+                 hidden_activation=nn.Tanh, layer_norm=True):
         super(GNNSegmentClassifier, self).__init__()
         self.n_iters = n_iters
         # Setup the input network
         self.input_network = make_mlp(input_dim, [hidden_dim],
-                                      output_activation=hidden_activation)
+                                      output_activation=hidden_activation,
+                                      layer_norm=layer_norm)
         # Setup the edge network
         self.edge_network = EdgeNetwork(input_dim+hidden_dim, hidden_dim,
-                                        hidden_activation)
+                                        hidden_activation, layer_norm=layer_norm)
         # Setup the node layers
         self.node_network = NodeNetwork(input_dim+hidden_dim, hidden_dim,
-                                        hidden_activation)
+                                        hidden_activation, layer_norm=layer_norm)
 
     def forward(self, inputs):
         """Apply forward pass of the model"""
