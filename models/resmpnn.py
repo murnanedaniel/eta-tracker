@@ -30,7 +30,7 @@ class GNN(nn.Module):
         self.n_graph_iters = n_graph_iters
 
         # The node encoder transforms input node features to the hidden space
-        self.node_encoder = make_mlp(input_dim, [hidden_node_dim])
+        self.node_encoder = make_mlp(input_dim, [hidden_node_dim]*2)
 
         # The edge network computes new edge features from connected nodes
         self.edge_network = make_mlp(2*hidden_node_dim,
