@@ -12,6 +12,7 @@ from torch import nn
 # Locals
 from .base_trainer import BaseTrainer
 from models import get_model
+from utils import get_optimizer, get_lr_scheduler
 
 class GNNTrainer(BaseTrainer):
     """Trainer code for basic classification problems."""
@@ -30,40 +31,52 @@ class GNNTrainer(BaseTrainer):
 
         # Construct the model
         self.model = get_model(name=name, **model_args).to(self.device)
-        if self.distributed:
+        # TODO: refactor this out and add cray support
+        if self.distributed_mode == 'file':
             self.model = nn.parallel.DistributedDataParallel(self.model,
                 device_ids=[self.gpu], output_device=self.gpu)
+        # CPU + MPI only
+        elif self.distributed_mode == 'mpi':
+            self.model = nn.parallel.DistributedDataParallelCPU(self.model)
 
         # Construct the loss function
         self.loss_func = getattr(nn.functional, loss_func)
 
         # Construct the optimizer
-        if lr_scaling == 'linear':
-            learning_rate = learning_rate * self.n_ranks
-            warmup_factor = 1. / self.n_ranks
-        elif lr_scaling == 'sqrt':
-            learning_rate = learning_rate * math.sqrt(self.n_ranks)
-            warmup_factor = 1. / math.sqrt(self.n_ranks)
-        else:
-            warmup_factor = 1
-        self.optimizer = getattr(torch.optim, optimizer)(
-            self.model.parameters(), lr=learning_rate)
+        self.optimizer = get_optimizer(optimizer, self.model.parameters(),
+                                       learning_rate=learning_rate,
+                                       lr_scaling=lr_scaling,
+                                       n_ranks=n_ranks)
+        #if lr_scaling == 'linear':
+        #    learning_rate = learning_rate * self.n_ranks
+        #    warmup_factor = 1. / self.n_ranks
+        #elif lr_scaling == 'sqrt':
+        #    learning_rate = learning_rate * math.sqrt(self.n_ranks)
+        #    warmup_factor = 1. / math.sqrt(self.n_ranks)
+        #else:
+        #    warmup_factor = 1
+        #self.optimizer = getattr(torch.optim, optimizer)(
+        #    self.model.parameters(), lr=learning_rate)
 
         # LR schedule
-        def lr_schedule(epoch, warmup_factor=warmup_factor,
-                        warmup_epochs=lr_warmup_epochs,
-                        decays=lr_decay_schedule):
-            if epoch < warmup_epochs:
-                return (1 - warmup_factor) * epoch / warmup_epochs + warmup_factor
-            for decay in decays:
-                if epoch >= decay['start_epoch'] and epoch < decay['end_epoch']:
-                    return decay['factor']
-            else:
-                return 1
-
+        self.lr_scheduler = get_lr_scheduler(self.optimizer,
+                                             lr_scaling=lr_scaling,
+                                             n_ranks=n_ranks,
+                                             warmup_epochs=lr_warmup_epochs,
+                                             decay_schedule=lr_decday_schedule)
+        #def lr_schedule(epoch, warmup_factor=warmup_factor,
+        #                warmup_epochs=lr_warmup_epochs,
+        #                decays=lr_decay_schedule):
+        #    if epoch < warmup_epochs:
+        #        return (1 - warmup_factor) * epoch / warmup_epochs + warmup_factor
+        #    for decay in decays:
+        #        if epoch >= decay['start_epoch'] and epoch < decay['end_epoch']:
+        #            return decay['factor']
+        #    else:
+        #        return 1
         # LR schedule
-        self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-            self.optimizer, lr_schedule)
+        #self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
+        #    self.optimizer, lr_schedule)
 
     def write_checkpoint(self, checkpoint_id):
         super(GNNTrainer, self).write_checkpoint(
