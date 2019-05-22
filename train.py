@@ -56,6 +56,7 @@ def init_workers(dist_mode):
         return dist.init_workers_file()
     elif dist_mode == 'mpi':
         return dist.init_workers_mpi()
+    elif dist_mode == 'cray':
         pass
     return 0, 1
 
@@ -87,8 +88,9 @@ def main():
         logging.info('Saving job outputs to %s', output_dir)
 
     # Load the datasets
+    distributed = (args.distributed is not None)
     train_data_loader, valid_data_loader = get_data_loaders(
-        distributed=args.distributed, rank=rank, n_ranks=n_ranks, **config['data'])
+        distributed=distributed, rank=rank, n_ranks=n_ranks, **config['data'])
     logging.info('Loaded %g training samples', len(train_data_loader.dataset))
     if valid_data_loader is not None:
         logging.info('Loaded %g validation samples', len(valid_data_loader.dataset))
