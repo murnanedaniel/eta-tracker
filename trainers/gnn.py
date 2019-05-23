@@ -30,7 +30,9 @@ class GNNTrainer(BaseTrainer):
         """Instantiate our model"""
 
         # Construct the model
-        self.model = get_model(name=name, **model_args).to(self.device)
+        model = get_model(name=name, **model_args).to(self.device)
+        self.model = distribute_model(model, mode=self.distributed_mode, gpu=self.gpu)
+
         # TODO: refactor this out and add cray support
         if self.distributed_mode == 'file':
             self.model = nn.parallel.DistributedDataParallel(self.model,
@@ -47,16 +49,6 @@ class GNNTrainer(BaseTrainer):
                                        learning_rate=learning_rate,
                                        lr_scaling=lr_scaling,
                                        n_ranks=n_ranks)
-        #if lr_scaling == 'linear':
-        #    learning_rate = learning_rate * self.n_ranks
-        #    warmup_factor = 1. / self.n_ranks
-        #elif lr_scaling == 'sqrt':
-        #    learning_rate = learning_rate * math.sqrt(self.n_ranks)
-        #    warmup_factor = 1. / math.sqrt(self.n_ranks)
-        #else:
-        #    warmup_factor = 1
-        #self.optimizer = getattr(torch.optim, optimizer)(
-        #    self.model.parameters(), lr=learning_rate)
 
         # LR schedule
         self.lr_scheduler = get_lr_scheduler(self.optimizer,
@@ -64,19 +56,6 @@ class GNNTrainer(BaseTrainer):
                                              n_ranks=n_ranks,
                                              warmup_epochs=lr_warmup_epochs,
                                              decay_schedule=lr_decday_schedule)
-        #def lr_schedule(epoch, warmup_factor=warmup_factor,
-        #                warmup_epochs=lr_warmup_epochs,
-        #                decays=lr_decay_schedule):
-        #    if epoch < warmup_epochs:
-        #        return (1 - warmup_factor) * epoch / warmup_epochs + warmup_factor
-        #    for decay in decays:
-        #        if epoch >= decay['start_epoch'] and epoch < decay['end_epoch']:
-        #            return decay['factor']
-        #    else:
-        #        return 1
-        # LR schedule
-        #self.lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
-        #    self.optimizer, lr_schedule)
 
     def write_checkpoint(self, checkpoint_id):
         super(GNNTrainer, self).write_checkpoint(

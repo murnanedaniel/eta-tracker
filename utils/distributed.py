@@ -1,5 +1,6 @@
 """Utility code for running distributed"""
 
+from torch import nn
 import torch.distributed as dist
 
 def init_workers_file():
@@ -14,3 +15,16 @@ def init_workers_file():
 def init_workers_mpi():
     # FINISH ME
     return 1, 0
+
+def distribute_model(model, mode=None, gpu=None):
+    if mode == 'file':
+        return nn.parallel.DistributedDataParallel(model, device_ids=[gpu],
+                                                   output_device=gpu)
+    elif mode == 'mpi':
+        return nn.parallel.DistributedDataParallelCPU(model)
+    elif mode == 'cray':
+        pass
+    return model
+
+def distribute_optimizer(optimizer):
+    pass
