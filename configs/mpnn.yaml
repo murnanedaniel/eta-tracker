@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/agnn_001
+output_dir: ${SCRATCH}/heptrkx/results/mpnn_001
 
 trainer:
     name: gnn_sparse
@@ -13,10 +13,12 @@ data:
     n_workers: 4
 
 model:
-    name: agnn
+    name: mpnn
     input_dim: 3
-    hidden_dim: 64
-    n_iters: 8
+    hidden_node_dim: 64
+    hidden_edge_dim: 64
+    #layer_norm: true
+    n_graph_iters: 8
     loss_func: binary_cross_entropy_with_logits
     optimizer: Adam
     learning_rate: 0.001
