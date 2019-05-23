@@ -33,22 +33,15 @@ class GNNTrainer(BaseTrainer):
         model = get_model(name=name, **model_args).to(self.device)
         self.model = distribute_model(model, mode=self.distributed_mode, gpu=self.gpu)
 
-        # TODO: refactor this out and add cray support
-        if self.distributed_mode == 'file':
-            self.model = nn.parallel.DistributedDataParallel(self.model,
-                device_ids=[self.gpu], output_device=self.gpu)
-        # CPU + MPI only
-        elif self.distributed_mode == 'mpi':
-            self.model = nn.parallel.DistributedDataParallelCPU(self.model)
-
         # Construct the loss function
         self.loss_func = getattr(nn.functional, loss_func)
 
         # Construct the optimizer
-        self.optimizer = get_optimizer(optimizer, self.model.parameters(),
-                                       learning_rate=learning_rate,
-                                       lr_scaling=lr_scaling,
-                                       n_ranks=n_ranks)
+        optimizer = get_optimizer(optimizer, self.model.parameters(),
+                                  learning_rate=learning_rate,
+                                  lr_scaling=lr_scaling,
+                                  n_ranks=n_ranks)
+        self.optimizer = distribute_optimizer(optimizer, mode=self.distributed_mode)
 
         # LR schedule
         self.lr_scheduler = get_lr_scheduler(self.optimizer,
