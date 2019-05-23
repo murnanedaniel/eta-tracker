@@ -16,15 +16,24 @@ def init_workers_mpi():
     # FINISH ME
     return 1, 0
 
+def init_workers_cray():
+    # FINISH ME
+    return 1, 0
+
 def distribute_model(model, mode=None, gpu=None):
-    if mode == 'file':
-        return nn.parallel.DistributedDataParallel(model, device_ids=[gpu],
-                                                   output_device=gpu)
-    elif mode == 'mpi':
+    # PyTorch distributed for GPUs using file initialization
+    if mode == 'ddp-file':
+        return nn.parallel.DistributedDataParallel(
+            model, device_ids=[gpu], output_device=gpu)
+    # CPU + MPI only
+    elif mode == 'ddp-mpi':
         return nn.parallel.DistributedDataParallelCPU(model)
     elif mode == 'cray':
         pass
     return model
 
-def distribute_optimizer(optimizer):
-    pass
+def distribute_optimizer(optimizer, mode=None):
+    # FINISH ME (for cray plugin)
+    if mode == 'cray':
+        pass
+    return optimizer
