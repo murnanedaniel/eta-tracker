@@ -88,21 +88,20 @@ def main():
         logging.info('Saving job outputs to %s', output_dir)
 
     # Load the datasets
-    distributed = (args.distributed is not None)
+    is_distributed = (args.distributed is not None)
     train_data_loader, valid_data_loader = get_data_loaders(
-        distributed=distributed, rank=rank, n_ranks=n_ranks, **config['data'])
+        distributed=is_distributed, rank=rank, n_ranks=n_ranks, **config['data'])
     logging.info('Loaded %g training samples', len(train_data_loader.dataset))
     if valid_data_loader is not None:
         logging.info('Loaded %g validation samples', len(valid_data_loader.dataset))
 
     # Load the trainer
-    gpu = args.gpu
-    if args.rank_gpu:
-        gpu = rank % args.ranks_per_node
+    gpu = (rank % args.ranks_per_node) if args.rank_gpu else args.gpu
     logging.info('Choosing GPU %s', gpu)
-    trainer = get_trainer(distributed=args.distributed, output_dir=output_dir,
-                          rank=rank, n_ranks=n_ranks, gpu=gpu,
-                          **config['trainer'])
+    trainer = get_trainer(distributed_mode=args.distributed,
+                          output_dir=output_dir,
+                          rank=rank, n_ranks=n_ranks,
+                          gpu=gpu, **config['trainer'])
     # Build the model and optimizer
     trainer.build_model(**config.get('model', {}))
     if rank == 0:
