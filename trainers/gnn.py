@@ -66,25 +66,6 @@ class GNNTrainer(BaseTrainer):
         checkpoint = super(GNNTrainer, self).load_checkpoint(checkpoint_id)
         self.model.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-<<<<<<< HEAD #### ADD TO utils
-
-        # CRAY ADDED - wrap the optimizer in order to use the 
-        # Plugin's communication. It's
-        #  completed as part of the base optimizer's step() method.
-        # nsteps = len(train_sampler) # Number of steps training will go on for
-        nsteps = 32768 # Number of steps training will go on for
-        nteams = 1 # number of teams you'll be training
-        nthreads = 2 # number of communication threads
-        warmup = 0.10 #warm up first 10% of training
-        verb = 2 # maximum verbosity
-        freq = 1 # number of steps before outputing verbosity output
-        if cdl.get_rank() == 0:
-            print("Completing ", nsteps, " steps")
-        self.optimizer = cdl.DistributedOptimizer(self.optimizer, nsteps, 
-                         nteams, nthreads, warmup, verb, freq)
-
-=======
->>>>>>> a4afa0e2b3c6ae23a5d9661267a641016b2a7b98
 
     def train_epoch(self, data_loader):
         """Train for one epoch"""
