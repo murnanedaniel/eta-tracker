@@ -8,9 +8,6 @@ import math
 # Externals
 import torch
 from torch import nn
-from torch.optim.lr_scheduler import LambdaLR
-
-import ml_comm_torch as cdl
 
 # Locals
 from .base_trainer import BaseTrainer
@@ -29,14 +26,11 @@ class GNNTrainer(BaseTrainer):
                     loss_func='binary_cross_entropy_with_logits',
                     optimizer='Adam', learning_rate=0.001,
                     lr_scaling=None, lr_warmup_epochs=0,
-                    lr_decay_schedule=[], load_model=None, **model_args):
+                    lr_decay_schedule=[], **model_args):
         """Instantiate our model"""
 
         # Construct the model
-        if load_model is None:
-            model = get_model(name=name, **model_args).to(self.device)
-        else:
-            model = torch.load(load_model)
+        model = get_model(name=name, **model_args).to(self.device)
         self.model = distribute_model(model, mode=self.distributed_mode, gpu=self.gpu)
 
         # Construct the loss function
@@ -85,7 +79,6 @@ class GNNTrainer(BaseTrainer):
             batch_output = self.model(batch_input)
             batch_loss = self.loss_func(batch_output, batch_target, weight=batch_weights)
             batch_loss.backward()
-            # self.logger.info('Before optimizer step batch %i', i)
             self.optimizer.step()
             sum_loss += batch_loss.item()
             self.logger.debug('  train batch %i, loss %f', i, batch_loss.item())
@@ -125,9 +118,6 @@ class GNNTrainer(BaseTrainer):
         self.logger.info('  Validation loss: %.3f acc: %.3f' %
                          (summary['valid_loss'], summary['valid_acc']))
         return summary
-
-    def save_model(self, path):
-        torch.save(self.model, path)
 
 def _test():
     t = GNNTrainer(output_dir='./')

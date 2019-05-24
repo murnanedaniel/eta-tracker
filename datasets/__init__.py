@@ -1,7 +1,6 @@
 """
 PyTorch dataset specifications.
 """
-import ml_comm_torch as cdl
 
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler

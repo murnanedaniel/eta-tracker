@@ -103,7 +103,7 @@ def main():
                           rank=rank, n_ranks=n_ranks,
                           gpu=gpu, **config['trainer'])
     # Build the model and optimizer
-    trainer.build_model(n_ranks=n_ranks, **config.get('model', {}))
+    trainer.build_model(**config.get('model', {}))
     if rank == 0:
         trainer.print_model_summary()
 
@@ -115,7 +115,6 @@ def main():
     summary = trainer.train(train_data_loader=train_data_loader,
                             valid_data_loader=valid_data_loader,
                             **config['training'])
-    # TODO: need mechanism to reduce summaries
     if rank == 0:
         trainer.write_summaries()
 

@@ -92,7 +92,7 @@ class BaseTrainer(object):
         logging.info('Reloading checkpoint at %s', checkpoint_file)
         return torch.load(os.path.join(checkpoint_dir, checkpoint_file))
 
-    def build_model(self, n_ranks):
+    def build_model(self):
         """Virtual method to construct the model(s)"""
         raise NotImplementedError
 

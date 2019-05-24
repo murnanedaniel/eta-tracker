@@ -11,7 +11,7 @@ data:
     n_train: 16384
     n_valid: 2048
     batch_size: 1
-    #n_workers: 4 # seg fault when distributed...
+    n_workers: 4
 
 model:
     name: 'agnn_original'
