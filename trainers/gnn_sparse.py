@@ -8,35 +8,26 @@ import math
 # Externals
 import torch
 from torch import nn
-from torch.optim.lr_scheduler import LambdaLR
-
-import ml_comm_torch as cdl
 
 # Locals
 from .base_trainer import BaseTrainer
 from models import get_model
-from utils import get_optimizer, get_lr_scheduler
 
 class GNNTrainer(BaseTrainer):
     """Trainer code for basic classification problems."""
 
-    def __init__(self, real_weight=1, fake_weight=1, **kwargs):
+    def __init__(self, **kwargs):
         super(GNNTrainer, self).__init__(**kwargs)
-        self.real_weight = real_weight
-        self.fake_weight = fake_weight
 
-    def build_model(self, name='gnn_segment_classifier',
+    def build_model(self, name='gnn_sparse',
                     loss_func='binary_cross_entropy_with_logits',
                     optimizer='Adam', learning_rate=0.001,
                     lr_scaling=None, lr_warmup_epochs=0,
-                    lr_decay_schedule=[], load_model=None, **model_args):
+                    lr_decay_schedule=[], **model_args):
         """Instantiate our model"""
 
         # Construct the model
-        if load_model is None:
-            model = get_model(name=name, **model_args).to(self.device)
-        else:
-            model = torch.load(load_model)
+        model = get_model(name=name, **model_args).to(self.device)
         self.model = distribute_model(model, mode=self.distributed_mode, gpu=self.gpu)
 
         # Construct the loss function
@@ -66,25 +57,6 @@ class GNNTrainer(BaseTrainer):
         checkpoint = super(GNNTrainer, self).load_checkpoint(checkpoint_id)
         self.model.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
-<<<<<<< HEAD #### ADD TO utils
-
-        # CRAY ADDED - wrap the optimizer in order to use the 
-        # Plugin's communication. It's
-        #  completed as part of the base optimizer's step() method.
-        # nsteps = len(train_sampler) # Number of steps training will go on for
-        nsteps = 32768 # Number of steps training will go on for
-        nteams = 1 # number of teams you'll be training
-        nthreads = 2 # number of communication threads
-        warmup = 0.10 #warm up first 10% of training
-        verb = 2 # maximum verbosity
-        freq = 1 # number of steps before outputing verbosity output
-        if cdl.get_rank() == 0:
-            print("Completing ", nsteps, " steps")
-        self.optimizer = cdl.DistributedOptimizer(self.optimizer, nsteps, 
-                         nteams, nthreads, warmup, verb, freq)
-
-=======
->>>>>>> a4afa0e2b3c6ae23a5d9661267a641016b2a7b98
 
     def train_epoch(self, data_loader):
         """Train for one epoch"""
@@ -93,18 +65,12 @@ class GNNTrainer(BaseTrainer):
         sum_loss = 0
         self.lr_scheduler.step()
         # Loop over training batches
-        for i, (batch_input, batch_target) in enumerate(data_loader):
-            batch_input = [a.to(self.device) for a in batch_input]
-            batch_target = batch_target.to(self.device)
-            # Compute target weights on-the-fly for loss function
-            batch_weights_real = batch_target * self.real_weight
-            batch_weights_fake = (1 - batch_target) * self.fake_weight
-            batch_weights = batch_weights_real + batch_weights_fake
+        for i, batch in enumerate(data_loader):
+            batch = batch.to(self.device)
             self.model.zero_grad()
-            batch_output = self.model(batch_input)
-            batch_loss = self.loss_func(batch_output, batch_target, weight=batch_weights)
+            batch_output = self.model(batch)
+            batch_loss = self.loss_func(batch_output, batch.y, weight=batch.w)
             batch_loss.backward()
-            # self.logger.info('Before optimizer step batch %i', i)
             self.optimizer.step()
             sum_loss += batch_loss.item()
             self.logger.debug('  train batch %i, loss %f', i, batch_loss.item())
@@ -125,15 +91,14 @@ class GNNTrainer(BaseTrainer):
         sum_correct = 0
         sum_total = 0
         # Loop over batches
-        for i, (batch_input, batch_target) in enumerate(data_loader):
-            batch_input = [a.to(self.device) for a in batch_input]
-            batch_target = batch_target.to(self.device)
-            batch_output = self.model(batch_input)
-            batch_loss = self.loss_func(batch_output, batch_target).item()
+        for i, batch in enumerate(data_loader):
+            batch = batch.to(self.device)
+            batch_output = self.model(batch)
+            batch_loss = self.loss_func(batch_output, batch.y).item()
             sum_loss += batch_loss
             # Count number of correct predictions
             batch_pred = torch.sigmoid(batch_output)
-            matches = ((batch_pred > 0.5) == (batch_target > 0.5))
+            matches = ((batch_pred > 0.5) == (batch.y > 0.5))
             sum_correct += matches.sum().item()
             sum_total += matches.numel()
             self.logger.debug(' valid batch %i, loss %.4f', i, batch_loss)
@@ -144,9 +109,6 @@ class GNNTrainer(BaseTrainer):
         self.logger.info('  Validation loss: %.3f acc: %.3f' %
                          (summary['valid_loss'], summary['valid_acc']))
         return summary
-
-    def save_model(self, path):
-        torch.save(self.model, path)
 
 def _test():
     t = GNNTrainer(output_dir='./')

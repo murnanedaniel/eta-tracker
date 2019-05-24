@@ -18,5 +18,8 @@ def get_trainer(name, **trainer_args):
     elif name == 'gnn':
         from .gnn import GNNTrainer
         return GNNTrainer(**trainer_args)
+    elif name == 'gnn_sparse':
+        from .gnn_sparse import GNNTrainer
+        return GNNTrainer(**trainer_args)
     else:
         raise Exception('Trainer %s unknown' % name)

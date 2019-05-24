@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_big_000
+output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_big_003
 
 trainer:
     name: gnn
@@ -11,17 +11,17 @@ data:
     n_train: 1024 #16384
     n_valid: 1024
     batch_size: 1
-    #n_workers: 4 # seg fault when distributed...
+    n_workers: 4
 
 model:
-    name: 'gnn_segment_classifier'
+    name: 'agnn_original'
     input_dim: 3
-    hidden_dim: 64 #128
-    n_iters: 4 #6
-    loss_func: 'binary_cross_entropy'
+    hidden_dim: 64
+    n_iters: 8
+    loss_func: 'binary_cross_entropy_with_logits'
     optimizer: 'Adam'
     learning_rate: 0.001
     lr_scaling: 'linear'
 
 training:
-    n_epochs: 1 #32
+    n_epochs: 64

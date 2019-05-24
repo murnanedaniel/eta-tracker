@@ -1,4 +1,4 @@
-output_dir: /lus/scratch/aheye/data/heptrkx/results/gnnsegclf_med_000
+output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_med_011
 
 trainer:
     name: gnn
@@ -7,22 +7,22 @@ trainer:
 
 data:
     name: hitgraphs
-    input_dir: /lus/snx11254/aheye/data/heptrkx/hitgraphs/hitgraphs_med_002
-    n_train: 8192
-    n_valid: 128
+    input_dir: ${SCRATCH}/heptrkx/data/hitgraphs_med_002
+    n_train: 16384
+    n_valid: 2048
     batch_size: 1
     #n_workers: 4 # seg fault when distributed...
 
 model:
-    name: 'gnn_segment_classifier'
+    name: 'agnn_original'
     input_dim: 3
     hidden_dim: 64
     n_iters: 4
-    loss_func: 'binary_cross_entropy'
+    loss_func: 'binary_cross_entropy_with_logits'
     optimizer: 'Adam'
     learning_rate: 0.001
     lr_scaling: 'linear'
     lr_warmup_epochs: 2
 
 training:
-    n_epochs: 10
+    n_epochs: 64

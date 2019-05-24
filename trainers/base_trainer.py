@@ -4,10 +4,13 @@ Common PyTorch trainer code.
 
 # System
 import os
+import re
 import logging
+import time
 
 # Externals
 import numpy as np
+import pandas as pd
 import torch
 
 class BaseTrainer(object):
@@ -17,13 +20,22 @@ class BaseTrainer(object):
     logging of summaries, and checkpoints.
     """
 
-    def __init__(self, output_dir=None, device='cpu', distributed=False):
+    def __init__(self, output_dir=None, gpu=None,
+                 distributed_mode=None, rank=0, n_ranks=1):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.output_dir = (os.path.expandvars(output_dir)
                            if output_dir is not None else None)
-        self.device = device
-        self.distributed = distributed
-        self.summaries = {}
+        self.gpu = gpu
+        if gpu is not None:
+            self.device = 'cuda:%i' % gpu
+            torch.cuda.set_device(gpu)
+        else:
+            self.device = 'cpu'
+        self.distributed_mode = distributed_mode
+        self.summaries = None
+        self.summary_file = None
+        self.rank = rank
+        self.n_ranks = n_ranks
 
     def print_model_summary(self):
         """Override as needed"""
@@ -34,25 +46,51 @@ class BaseTrainer(object):
         )
 
     def save_summary(self, summaries):
-        """Save summary information"""
-        for (key, val) in summaries.items():
-            summary_vals = self.summaries.get(key, [])
-            self.summaries[key] = summary_vals + [val]
+        """Save summary information.
+        This implementation is currently inefficient for simplicity:
+            - we build a new DataFrame each time
+            - we write the whole summary file each time
+        """
+        if self.summaries is None:
+            self.summaries = pd.DataFrame([summaries])
+        else:
+            self.summaries = self.summaries.append([summaries], ignore_index=True)
+        if self.output_dir is not None:
+            summary_file = os.path.join(self.output_dir, 'summaries_%i.csv' % self.rank)
+            self.summaries.to_csv(summary_file, index=False)
 
     def write_summaries(self):
+        """Deprecated"""
         assert self.output_dir is not None
         summary_file = os.path.join(self.output_dir, 'summaries.npz')
         self.logger.info('Saving summaries to %s' % summary_file)
         np.savez(summary_file, **self.summaries)
 
-    def write_checkpoint(self, checkpoint_id):
+    def write_checkpoint(self, checkpoint_id, **kwargs):
         """Write a checkpoint for the model"""
         assert self.output_dir is not None
         checkpoint_dir = os.path.join(self.output_dir, 'checkpoints')
-        checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
         os.makedirs(checkpoint_dir, exist_ok=True)
-        torch.save(dict(model=self.model.state_dict()),
-                   os.path.join(checkpoint_dir, checkpoint_file))
+        checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
+        torch.save(kwargs, os.path.join(checkpoint_dir, checkpoint_file))
+
+    def load_checkpoint(self, checkpoint_id=-1):
+        """Load a model checkpoint"""
+        assert self.output_dir is not None
+        # Load the summaries
+        summary_file = os.path.join(self.output_dir, 'summaries_%i.csv' % self.rank)
+        logging.info('Reloading summary at %s', summary_file)
+        self.summaries = pd.read_csv(summary_file)
+        # Load the checkpoint
+        checkpoint_dir = os.path.join(self.output_dir, 'checkpoints')
+        if checkpoint_id == -1:
+            # Find the last checkpoint
+            last_checkpoint = sorted(os.listdir(checkpoint_dir))[-1]
+            pattern = 'model_checkpoint_(\d..).pth.tar'
+            checkpoint_id = int(re.match(pattern, last_checkpoint).group(1))
+        checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
+        logging.info('Reloading checkpoint at %s', checkpoint_file)
+        return torch.load(os.path.join(checkpoint_dir, checkpoint_file))
 
     def build_model(self, n_ranks):
         """Virtual method to construct the model(s)"""
@@ -70,17 +108,28 @@ class BaseTrainer(object):
         """Run the model training"""
 
         # Loop over epochs
-        for i in range(n_epochs):
+        start_epoch = 0
+        if self.summaries is not None:
+            start_epoch = self.summaries.epoch.max() + 1
+        for i in range(start_epoch, n_epochs):
             self.logger.info('Epoch %i' % i)
+            try:
+                train_data_loader.sampler.set_epoch(i)
+            except AttributeError:
+                pass
             summary = dict(epoch=i)
             # Train on this epoch
+            start_time = time.time()
             summary.update(self.train_epoch(train_data_loader))
+            summary['train_time'] = time.time() - start_time
             # Evaluate on this epoch
             if valid_data_loader is not None:
+                start_time = time.time()
                 summary.update(self.evaluate(valid_data_loader))
+                summary['valid_time'] = time.time() - start_time
             # Save summary, checkpoint
             self.save_summary(summary)
-            if self.output_dir is not None:
+            if self.output_dir is not None and self.rank == 0:
                 self.write_checkpoint(checkpoint_id=i)
 
         return self.summaries

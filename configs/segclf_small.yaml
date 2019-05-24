@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_small_000
+output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_small_002
 
 trainer:
     name: gnn
@@ -6,20 +6,20 @@ trainer:
 data:
     name: hitgraphs
     input_dir: ${SCRATCH}/heptrkx/data/hitgraphs_small_000
-    n_train: 1024 #8192
-    n_valid: 1024
+    n_train: 16384
+    n_valid: 2048
     batch_size: 1
-    #n_workers: 4 # seg fault when distributed...
+    n_workers: 6
 
 model:
-    name: 'gnn_segment_classifier'
+    name: 'agnn_original'
     input_dim: 3
-    hidden_dim: 32
+    hidden_dim: 64
     n_iters: 4
-    loss_func: 'binary_cross_entropy'
+    loss_func: 'binary_cross_entropy_with_logits'
     optimizer: 'Adam'
     learning_rate: 0.001
     lr_scaling: 'linear'
 
 training:
-    n_epochs: 8
+    n_epochs: 32
