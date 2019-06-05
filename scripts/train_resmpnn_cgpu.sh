@@ -6,6 +6,7 @@
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=30GB
 #SBATCH -t 8:00:00
+#SBATCH -d singleton
 #SBATCH -o logs/%x-%j.out
 
 # Setup
