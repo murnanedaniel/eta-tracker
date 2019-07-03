@@ -12,6 +12,8 @@ from torch import nn
 # Locals
 from .base_trainer import BaseTrainer
 from models import get_model
+from utils.optimizers import get_optimizer, get_lr_scheduler
+from utils.distributed import distribute_model, distribute_optimizer
 
 class GNNTrainer(BaseTrainer):
     """Trainer code for basic classification problems."""
@@ -37,15 +39,15 @@ class GNNTrainer(BaseTrainer):
         optimizer = get_optimizer(optimizer, self.model.parameters(),
                                   learning_rate=learning_rate,
                                   lr_scaling=lr_scaling,
-                                  n_ranks=n_ranks)
+                                  n_ranks=self.n_ranks)
         self.optimizer = distribute_optimizer(optimizer, mode=self.distributed_mode)
 
         # LR schedule
         self.lr_scheduler = get_lr_scheduler(self.optimizer,
                                              lr_scaling=lr_scaling,
-                                             n_ranks=n_ranks,
+                                             n_ranks=self.n_ranks,
                                              warmup_epochs=lr_warmup_epochs,
-                                             decay_schedule=lr_decday_schedule)
+                                             decay_schedule=lr_decay_schedule)
 
     def write_checkpoint(self, checkpoint_id):
         super(GNNTrainer, self).write_checkpoint(

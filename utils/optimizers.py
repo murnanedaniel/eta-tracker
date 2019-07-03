@@ -1,6 +1,6 @@
 """Optimizer utility code"""
 
-import match
+import math
 from functools import partial
 
 import torch
@@ -31,6 +31,6 @@ def get_lr_scheduler(optimizer, lr_scaling=None, n_ranks=1, warmup_epochs=0,
     elif lr_scaling == 'sqrt':
         warmup_factor = 1. / math.sqrt(n_ranks)
 
-    schedule = partial(_lr_scheduler, warmup_factor=warmup_factor,
+    schedule = partial(_lr_schedule, warmup_factor=warmup_factor,
                        warmup_epochs=warmup_epochs, decays=decay_schedule)
     return torch.optim.lr_scheduler.LambdaLR(optimizer, schedule)
