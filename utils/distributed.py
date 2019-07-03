@@ -2,7 +2,6 @@
 
 from torch import nn
 import torch.distributed as dist
-import ml_comm_torch as cdl
 
 def init_workers_file():
     rank = int(os.environ['SLURM_PROCID'])
@@ -18,6 +17,7 @@ def init_workers_mpi():
     return 1, 0
 
 def init_workers_cray():
+    import ml_comm_torch as cdl
     cdl.init_mpi()
     rank = cdl.get_rank()
     n_ranks = cdl.get_nranks()
@@ -36,8 +36,8 @@ def distribute_model(model, mode=None, gpu=None):
     return model
 
 def distribute_optimizer(optimizer, mode=None):
-    # FINISH ME (for cray plugin)
     if mode == 'cray':
+        import ml_comm_torch as cdl
         # Wrap the optimizer in order to use the 
         # Plugin's communication. It's
         # completed as part of the base optimizer's step() method.
