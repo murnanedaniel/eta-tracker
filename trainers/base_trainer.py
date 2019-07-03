@@ -21,7 +21,7 @@ class BaseTrainer(object):
     """
 
     def __init__(self, output_dir=None, gpu=None,
-                 distributed=False, rank=0, n_ranks=1):
+                 distributed_mode=None, rank=0, n_ranks=1):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.output_dir = (os.path.expandvars(output_dir)
                            if output_dir is not None else None)
@@ -31,7 +31,7 @@ class BaseTrainer(object):
             torch.cuda.set_device(gpu)
         else:
             self.device = 'cpu'
-        self.distributed = distributed
+        self.distributed_mode = distributed_mode
         self.summaries = None
         self.summary_file = None
         self.rank = rank

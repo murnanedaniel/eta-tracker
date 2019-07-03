@@ -24,7 +24,7 @@ def parse_args():
     parser = argparse.ArgumentParser('train.py')
     add_arg = parser.add_argument
     add_arg('config', nargs='?', default='configs/hello.yaml')
-    add_arg('-d', '--distributed', choices=['file', 'mpi', 'cray'])
+    add_arg('-d', '--distributed', choices=['ddp-file', 'ddp-mpi', 'cray'])
     add_arg('-v', '--verbose', action='store_true')
     add_arg('--ranks-per-node', default=8)
     add_arg('--gpu', type=int)
@@ -52,12 +52,12 @@ def config_logging(verbose, output_dir, append=False, rank=0):
 
 def init_workers(dist_mode):
     """Initialize worker process group"""
-    if dist_mode == 'file':
+    if dist_mode == 'ddp-file':
         return dist.init_workers_file()
-    elif dist_mode == 'mpi':
+    elif dist_mode == 'ddp-mpi':
         return dist.init_workers_mpi()
     elif dist_mode == 'cray':
-        pass
+        return dist.init_workers_cray()
     return 0, 1
 
 def load_config(config_file):
@@ -88,21 +88,20 @@ def main():
         logging.info('Saving job outputs to %s', output_dir)
 
     # Load the datasets
-    distributed = (args.distributed is not None)
+    is_distributed = (args.distributed is not None)
     train_data_loader, valid_data_loader = get_data_loaders(
-        distributed=distributed, rank=rank, n_ranks=n_ranks, **config['data'])
+        distributed=is_distributed, rank=rank, n_ranks=n_ranks, **config['data'])
     logging.info('Loaded %g training samples', len(train_data_loader.dataset))
     if valid_data_loader is not None:
         logging.info('Loaded %g validation samples', len(valid_data_loader.dataset))
 
     # Load the trainer
-    gpu = args.gpu
-    if args.rank_gpu:
-        gpu = rank % args.ranks_per_node
+    gpu = (rank % args.ranks_per_node) if args.rank_gpu else args.gpu
     logging.info('Choosing GPU %s', gpu)
-    trainer = get_trainer(distributed=args.distributed, output_dir=output_dir,
-                          rank=rank, n_ranks=n_ranks, gpu=gpu,
-                          **config['trainer'])
+    trainer = get_trainer(distributed_mode=args.distributed,
+                          output_dir=output_dir,
+                          rank=rank, n_ranks=n_ranks,
+                          gpu=gpu, **config['trainer'])
     # Build the model and optimizer
     trainer.build_model(**config.get('model', {}))
     if rank == 0:

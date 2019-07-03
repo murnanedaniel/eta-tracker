@@ -6,16 +6,6 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torch.utils.data.dataloader import default_collate
 
-def get_datasets(name, **data_args):
-    if name == 'dummy':
-        from .dummy import get_datasets
-        return get_datasets(**data_args)
-    elif name == 'hitgraphs':
-        from .hitgraphs import get_datasets
-        return get_datasets(**data_args)
-    else:
-        raise Exception('Dataset %s unknown' % name)
-
 def get_data_loaders(name, batch_size, distributed=False,
                      n_workers=0, rank=None, n_ranks=None,
                      **data_args):
