@@ -12,4 +12,4 @@ mkdir -p logs
 . scripts/setup_cori.sh
 
 # Run training
-srun -u python train.py $config $@
+srun -l -u python train.py $config $@

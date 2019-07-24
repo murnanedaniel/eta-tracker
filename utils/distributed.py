@@ -20,8 +20,7 @@ def init_workers_mpi():
     return rank, n_ranks
 
 def init_workers_cray():
-    import ml_comm_torch as cdl
-    cdl.init_mpi()
+    import dl_comm.torch as cdl
     rank = cdl.get_rank()
     n_ranks = cdl.get_nranks()
     return rank, n_ranks
@@ -34,24 +33,17 @@ def distribute_model(model, mode=None, gpu=None):
     # CPU + MPI only
     elif mode == 'ddp-mpi':
         return nn.parallel.DistributedDataParallelCPU(model)
+    # With cray plugin we instead wrap the optimizer, not the model
     elif mode == 'cray':
         pass
     return model
 
 def distribute_optimizer(optimizer, mode=None):
     if mode == 'cray':
-        import ml_comm_torch as cdl
-        # Wrap the optimizer in order to use the 
-        # Plugin's communication. It's
-        # completed as part of the base optimizer's step() method.
-        # nsteps = len(train_sampler) # Number of steps training will go on for
-        # TODO compute these automatically
-        nsteps = 32768 # Number of steps training will go on for
-        nteams = 1 # number of teams you'll be training
-        nthreads = 2 # number of communication threads
-        warmup = 0.10 #warm up first 10% of training
-        verb = 2 # maximum verbosity
-        freq = 1 # number of steps before outputing verbosity output
-        optimizer = cdl.DistributedOptimizer(optimizer, nsteps, 
-                        nteams, nthreads, warmup, verb, freq)
+        # Wrap the optimizer in order to use the Plugin's communication.
+        import dl_comm.torch as cdl
+        nteam = 1 # number of teams you'll be training
+        nthread = 2 # number of communication threads
+        optimizer = cdl.DistributedOptimizer(optimizer, nteam=nteam,
+                                             nthread_per_team=nthread)
     return optimizer
