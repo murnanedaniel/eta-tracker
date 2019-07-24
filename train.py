@@ -89,6 +89,10 @@ def main():
 
     # Load the datasets
     is_distributed = (args.distributed is not None)
+    # Workaround because multi-process I/O not working with MPI backend
+    if args.distributed in ['ddp-mpi', 'cray']:
+        logging.info('Disabling I/O workers because of MPI issue')
+        config['data']['n_workers'] = 0
     train_data_loader, valid_data_loader = get_data_loaders(
         distributed=is_distributed, rank=rank, n_ranks=n_ranks, **config['data'])
     logging.info('Loaded %g training samples', len(train_data_loader.dataset))
