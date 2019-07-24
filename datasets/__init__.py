@@ -23,7 +23,6 @@ def get_data_loaders(name, batch_size, distributed=False,
         from . import hitgraphs_sparse
         train_dataset, valid_dataset = hitgraphs_sparse.get_datasets(**data_args)
         collate_fn = Batch.from_data_list
-
     else:
         raise Exception('Dataset %s unknown' % name)
 
@@ -34,7 +33,8 @@ def get_data_loaders(name, batch_size, distributed=False,
     if distributed:
         train_sampler = DistributedSampler(train_dataset, rank=rank, num_replicas=n_ranks)
         valid_sampler = DistributedSampler(valid_dataset, rank=rank, num_replicas=n_ranks)
-    train_data_loader = DataLoader(train_dataset, sampler=train_sampler, **loader_args)
+    train_data_loader = DataLoader(train_dataset, sampler=train_sampler,
+                                   shuffle=(train_sampler is None), **loader_args)
     valid_data_loader = (DataLoader(valid_dataset, sampler=valid_sampler, **loader_args)
                          if valid_dataset is not None else None)
     return train_data_loader, valid_data_loader
