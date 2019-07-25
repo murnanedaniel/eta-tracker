@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J agnn-big
+#SBATCH -J agnn-cori
 #SBATCH -N 1
 #SBATCH -C haswell
 #SBATCH -q debug
@@ -7,7 +7,7 @@
 #SBATCH -o logs/%x-%j.out
 
 # Setup
-config=configs/agnn_big.yaml
+config=configs/agnn.yaml
 mkdir -p logs
 . scripts/setup_cori.sh
 
