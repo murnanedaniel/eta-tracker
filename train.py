@@ -62,7 +62,7 @@ def init_workers(dist_mode):
 
 def load_config(config_file):
     with open(config_file) as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.FullLoader)
 
 def main():
     """Main function"""
