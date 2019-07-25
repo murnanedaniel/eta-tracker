@@ -1,5 +1,7 @@
 """Utility code for running distributed"""
 
+import os
+
 from torch import nn
 import torch.distributed as dist
 
