@@ -15,7 +15,6 @@ def init_workers_file():
     return rank, n_ranks
 
 def init_workers_mpi():
-    rank, n_ranks = 0, 1
     dist.init_process_group(backend='mpi')
     rank = dist.get_rank()
     n_ranks = dist.get_world_size()
