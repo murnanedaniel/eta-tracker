@@ -27,13 +27,10 @@ def init_workers_cray():
     return rank, n_ranks
 
 def distribute_model(model, mode=None, gpu=None):
-    # PyTorch distributed for GPUs using file initialization
-    if mode == 'ddp-file':
+    # PyTorch distributed data parallel
+    if mode in ['ddp-file', 'ddp-mpi']:
         return nn.parallel.DistributedDataParallel(
             model, device_ids=[gpu], output_device=gpu)
-    # CPU + MPI only
-    elif mode == 'ddp-mpi':
-        return nn.parallel.DistributedDataParallelCPU(model)
     # With cray plugin we instead wrap the optimizer, not the model
     elif mode == 'cray':
         pass
