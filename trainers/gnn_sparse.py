@@ -65,7 +65,6 @@ class GNNTrainer(BaseTrainer):
         self.model.train()
         summary = dict()
         sum_loss = 0
-        self.lr_scheduler.step()
         # Loop over training batches
         for i, batch in enumerate(data_loader):
             batch = batch.to(self.device)
@@ -82,6 +81,7 @@ class GNNTrainer(BaseTrainer):
         self.logger.debug(' Processed %i batches', i + 1)
         self.logger.debug(' Current LR %f', summary['lr'])
         self.logger.info('  Training loss: %.3f', summary['train_loss'])
+        self.lr_scheduler.step()
         return summary
 
     @torch.no_grad()
