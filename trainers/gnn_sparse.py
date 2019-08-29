@@ -13,13 +13,27 @@ from torch import nn
 from .base_trainer import BaseTrainer
 from models import get_model
 
+#def grad_norm(parameters):
+#    """Helper function for debugging"""
+#    if isinstance(parameters, torch.Tensor):
+#        parameters = [parameters]
+#    parameters = list(filter(lambda p: p.grad is not None, parameters))
+#    total_norm = 0
+#    norm_type = 2
+#    for p in parameters:
+#        param_norm = p.grad.data.norm(norm_type)
+#        total_norm += param_norm.item() ** norm_type
+#    total_norm = total_norm ** (1. / norm_type)
+#    return total_norm
+
 class GNNTrainer(BaseTrainer):
     """Trainer code for basic classification problems."""
 
-    def __init__(self, real_weight=1, fake_weight=1, **kwargs):
+    def __init__(self, real_weight=1, fake_weight=1, grad_clip=10, **kwargs):
         super(GNNTrainer, self).__init__(**kwargs)
         self.real_weight = real_weight
         self.fake_weight = fake_weight
+        self.grad_clip = grad_clip
 
     def build_model(self, name='gnn_sparse',
                     loss_func='binary_cross_entropy_with_logits',
@@ -93,9 +107,15 @@ class GNNTrainer(BaseTrainer):
             batch_output = self.model(batch)
             batch_loss = self.loss_func(batch_output, batch.y, weight=batch_weights)
             batch_loss.backward()
+            # Gradient clipping
+            grad_norm = nn.utils.clip_grad_norm_(self.model.parameters(), self.grad_clip)
+            if grad_norm > self.grad_clip:
+                self.logger.info('  Clipped gradient norm %.2f to %.2f', grad_norm, self.grad_clip)
             self.optimizer.step()
             sum_loss += batch_loss.item()
-            self.logger.debug('  train batch %i, loss %f', i, batch_loss.item())
+            self.logger.debug('  train batch %i, loss %f, nodes %i, edges %i, purity %.3f, grad %.3f',
+                              i, batch_loss.item(), batch.x.shape[0], batch.y.shape[0],
+                              batch.y.mean().item(), grad_norm)
 
         summary['lr'] = self.optimizer.param_groups[0]['lr']
         summary['train_loss'] = sum_loss / (i + 1)
@@ -123,7 +143,7 @@ class GNNTrainer(BaseTrainer):
             matches = ((batch_pred > 0.5) == (batch.y > 0.5))
             sum_correct += matches.sum().item()
             sum_total += matches.numel()
-            self.logger.debug(' valid batch %i, loss %.4f', i, batch_loss)
+            #self.logger.debug(' valid batch %i, loss %.4f', i, batch_loss)
         summary['valid_loss'] = sum_loss / (i + 1)
         summary['valid_acc'] = sum_correct / sum_total
         self.logger.debug(' Processed %i samples in %i batches',
