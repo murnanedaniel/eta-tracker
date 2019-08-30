@@ -18,7 +18,6 @@ from torch.utils.data.distributed import DistributedSampler
 from datasets import get_data_loaders
 from trainers import get_trainer
 import distributed
-from utils import distributed as dist
 
 def parse_args():
     """Parse command line arguments."""
