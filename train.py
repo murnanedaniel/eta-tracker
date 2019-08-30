@@ -17,6 +17,7 @@ from torch.utils.data.distributed import DistributedSampler
 # Locals
 from datasets import get_data_loaders
 from trainers import get_trainer
+import distributed
 from utils import distributed as dist
 
 def parse_args():
@@ -53,11 +54,14 @@ def config_logging(verbose, output_dir, append=False, rank=0):
 def init_workers(dist_mode):
     """Initialize worker process group"""
     if dist_mode == 'ddp-file':
-        return dist.init_workers_file()
+        from distributed.torch import init_workers_file
+        return init_workers_file()
     elif dist_mode == 'ddp-mpi':
-        return dist.init_workers_mpi()
+        from distributed.torch import init_workers_mpi
+        return init_workers_mpi()
     elif dist_mode == 'cray':
-        return dist.init_workers_cray()
+        from distributed.cray import init_workers_cray
+        return init_workers_cray()
     return 0, 1
 
 def load_config(config_file):
