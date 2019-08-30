@@ -1,7 +1,7 @@
 output_dir: ${SCRATCH}/heptrkx/results/gnnsegclf_big_003
 
 trainer:
-    name: gnn
+    name: gnn_dense
     real_weight: 5.0   # 0.5 / 0.1
     fake_weight: 0.555 # 0.5 / 0.9
 
