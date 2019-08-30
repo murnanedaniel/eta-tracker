@@ -8,17 +8,17 @@ import re
 import logging
 import time
 import math
+from functools import partial
 
 # Externals
 import numpy as np
 import pandas as pd
 import torch
 import torch.nn as nn
+from torch.nn.parallel import DistributedDataParallel
 
 # Locals
 from models import get_model
-from utils.optimizers import get_lr_scheduler
-from utils.distributed import distribute_model, distribute_optimizer
 
 class GNNBaseTrainer(object):
     """
@@ -46,47 +46,60 @@ class GNNBaseTrainer(object):
         self.n_ranks = n_ranks
 
     def _build_optimizer(self, parameters, name='Adam', learning_rate=0.001,
-                         lr_scaling=None, n_ranks=1, **optimizer_args):
+                         lr_scaling=None, lr_warmup_epochs=0, lr_decay_schedule=[],
+                         **optimizer_args):
         """Construct the training optimizer and scale learning rate.
         Should be called by build_model rather than called directly."""
 
-        # Scale the learning rate
+        # Compute the scaled learning rate and corresponding initial warmup factor
+        warmup_factor = 1
         if lr_scaling == 'linear':
-            learning_rate = learning_rate * n_ranks
+            learning_rate = learning_rate * self.n_ranks
+            warmup_factor = 1. / self.n_ranks
         elif lr_scaling == 'sqrt':
-            learning_rate = learning_rate * math.sqrt(n_ranks)
+            learning_rate = learning_rate * math.sqrt(self.n_ranks)
+            warmup_factor = 1. / math.sqrt(self.n_ranks)
 
         # Construct the optimizer
         OptimizerType = getattr(torch.optim, name)
         optimizer = OptimizerType(parameters, lr=learning_rate, **optimizer_args)
-        return optimizer
+
+        # Distribute the optimizer if requested
+        if self.distributed_mode == 'cray':
+            from distributed.cray import distribute_optimizer
+            optimizer = distribute_optimizer(optimizer)
+
+        # Prepare the learning rate scheduler
+        def _lr_schedule(epoch, warmup_factor=1, warmup_epochs=0, decays=[]):
+            if epoch < warmup_epochs:
+                return (1 - warmup_factor) * epoch / warmup_epochs + warmup_factor
+            for decay in decays:
+                if epoch >= decay['start_epoch'] and epoch < decay['end_epoch']:
+                    return decay['factor']
+            return 1
+        lr_schedule = partial(_lr_schedule, warmup_factor=warmup_factor,
+                              warmup_epochs=lr_warmup_epochs, decays=lr_decay_schedule)
+        lr_scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_schedule)
+        return optimizer, lr_scheduler
 
     def build_model(self, name='gnn_sparse',
                     loss_func='binary_cross_entropy_with_logits',
-                    optimizer={}, lr_scaling='linear', lr_warmup_epochs=0, lr_decay_schedule=[],
-                    **model_args):
+                    optimizer={}, **model_args):
         """Instantiate our model"""
 
-        self.logger.info(optimizer)
         # Construct the model
-        model = get_model(name=name, **model_args).to(self.device)
-        self.model = distribute_model(model, mode=self.distributed_mode, gpu=self.gpu)
+        self.model = get_model(name=name, **model_args).to(self.device)
+
+        # PyTorch distributed data parallel
+        if self.distributed_mode in ['ddp-file', 'ddp-mpi']:
+            self.model = DistributedDataParallel(self.model, device_ids=[self.gpu])
 
         # Construct the loss function
         self.loss_func = getattr(nn.functional, loss_func)
 
-        # Construct the optimizer
-        optimizer = self._build_optimizer(self.model.parameters(),
-                                          n_ranks=self.n_ranks, lr_scaling=lr_scaling,
-                                          **optimizer)
-        self.optimizer = distribute_optimizer(optimizer, mode=self.distributed_mode)
-
-        # LR schedule
-        self.lr_scheduler = get_lr_scheduler(self.optimizer,
-                                             lr_scaling=lr_scaling,
-                                             n_ranks=self.n_ranks,
-                                             warmup_epochs=lr_warmup_epochs,
-                                             decay_schedule=lr_decay_schedule)
+        # Construct the optimizer and learning rate scheduler
+        self.optimizer, self.lr_scheduler = self._build_optimizer(
+            self.model.parameters(), **optimizer)
 
     def save_summary(self, summaries):
         """Save summary information.
