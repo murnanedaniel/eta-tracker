@@ -1,5 +1,8 @@
 # Software environment setup for Cori GPU
-# Currently using my conda installation with pytorch-geometric
-INSTALL_DIR=/global/cscratch1/sd/sfarrell/conda/pytorch-geometric-gpu
-conda activate $INSTALL_DIR
-export LD_LIBRARY_PATH=$INSTALL_DIR/lib:$LD_LIBRARY_PATH
+module load gcc/7.3.0
+module load cuda/10.1.168
+module load openmpi/4.0.1-ucx-1.6
+module load pytorch/v1.2.0-gpu
+
+# Libary path fix
+export LD_LIBRARY_PATH=$(dirname $(which python))/../lib/python3.6/site-packages/torch/lib:$LD_LIBRARY_PATH
