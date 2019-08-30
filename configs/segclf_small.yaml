@@ -17,10 +17,11 @@ model:
     hidden_dim: 64
     n_iters: 4
     loss_func: 'binary_cross_entropy_with_logits'
-    optimizer:
-        name: 'Adam'
-        learning_rate: 0.001
-        lr_scaling: 'linear'
+
+optimizer:
+    name: 'Adam'
+    learning_rate: 0.001
+    lr_scaling: 'linear'
 
 training:
     n_epochs: 32

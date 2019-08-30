@@ -73,7 +73,8 @@ def main():
 
     # Parse the command line
     args = parse_args()
-    # Initialize MPI
+
+    # Initialize distributed workers
     rank, n_ranks = init_workers(args.distributed)
 
     # Load configuration
@@ -110,8 +111,11 @@ def main():
                           output_dir=output_dir,
                           rank=rank, n_ranks=n_ranks,
                           gpu=gpu, **config['trainer'])
+
     # Build the model and optimizer
-    trainer.build_model(**config.get('model', {}))
+    model_config = config.get('model', {})
+    optimizer_config = config.get('optimizer', {})
+    trainer.build_model(optimizer_config=optimizer_config, **model_config)
     if rank == 0:
         trainer.print_model_summary()
 

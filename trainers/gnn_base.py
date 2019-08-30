@@ -84,7 +84,7 @@ class GNNBaseTrainer(object):
 
     def build_model(self, name='gnn_sparse',
                     loss_func='binary_cross_entropy_with_logits',
-                    optimizer={}, **model_args):
+                    optimizer_config={}, **model_args):
         """Instantiate our model"""
 
         # Construct the model
@@ -99,7 +99,7 @@ class GNNBaseTrainer(object):
 
         # Construct the optimizer and learning rate scheduler
         self.optimizer, self.lr_scheduler = self._build_optimizer(
-            self.model.parameters(), **optimizer)
+            self.model.parameters(), **optimizer_config)
 
     def save_summary(self, summaries):
         """Save summary information.
