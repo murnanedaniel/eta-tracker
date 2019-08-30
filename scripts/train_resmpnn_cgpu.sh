@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J resmpnn-big-cgpu
+#SBATCH -J resmpnn-cgpu
 #SBATCH -N 1
 #SBATCH -C gpu
 #SBATCH --gres=gpu:1
@@ -10,7 +10,7 @@
 #SBATCH -o logs/%x-%j.out
 
 # Setup
-config=configs/resmpnn_big.yaml
+config=configs/resmpnn.yaml
 . scripts/setup_cgpu.sh
 mkdir -p logs
 
