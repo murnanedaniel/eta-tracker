@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/agnn_001
+output_dir: ${SCRATCH}/heptrkx/results/agnn_000
 
 trainer:
     name: gnn_sparse
@@ -6,9 +6,9 @@ trainer:
 data:
     name: hitgraphs_sparse
     input_dir: ${SCRATCH}/heptrkx/data/hitgraphs_high_000
-    n_train: 32768
+    n_train: 49152
     n_valid: 4096
-    real_weight: 6.25  # 0.5 / 0.08
+    real_weight: 5 #6.25  # 0.5 / 0.08
     batch_size: 1
     n_workers: 4
 
@@ -17,6 +17,7 @@ model:
     input_dim: 3
     hidden_dim: 64
     n_graph_iters: 8
+    layer_norm: true
     loss_func: binary_cross_entropy_with_logits
 
 optimizer:
