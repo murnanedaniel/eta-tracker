@@ -119,8 +119,6 @@ def main():
     summary = trainer.train(train_data_loader=train_data_loader,
                             valid_data_loader=valid_data_loader,
                             **config['training'])
-    if rank == 0:
-        trainer.write_summaries()
 
     # Print some conclusions
     n_train_samples = len(train_data_loader.sampler)
