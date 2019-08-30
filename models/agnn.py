@@ -66,10 +66,10 @@ class GNNSegmentClassifier(nn.Module):
     Segment classification graph neural network model.
     Consists of an input network, an edge network, and a node network.
     """
-    def __init__(self, input_dim=3, hidden_dim=8, n_iters=3,
+    def __init__(self, input_dim=3, hidden_dim=8, n_graph_iters=3,
                  hidden_activation=nn.Tanh, layer_norm=True):
         super(GNNSegmentClassifier, self).__init__()
-        self.n_iters = n_iters
+        self.n_graph_iters = n_graph_iters
         # Setup the input network
         self.input_network = make_mlp(input_dim, [hidden_dim],
                                       output_activation=hidden_activation,
@@ -88,7 +88,7 @@ class GNNSegmentClassifier(nn.Module):
         # Shortcut connect the inputs onto the hidden representation
         x = torch.cat([x, inputs.x], dim=-1)
         # Loop over iterations of edge and node networks
-        for i in range(self.n_iters):
+        for i in range(self.n_graph_iters):
             # Apply edge network
             e = torch.sigmoid(self.edge_network(x, inputs.edge_index))
             # Apply node network

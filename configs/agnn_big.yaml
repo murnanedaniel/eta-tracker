@@ -17,7 +17,7 @@ model:
     input_dim: 3
     hidden_dim: 64
     layer_norm: true
-    n_iters: 8
+    n_graph_iters: 8
     loss_func: binary_cross_entropy_with_logits
 
 optimizer:
