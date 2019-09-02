@@ -23,12 +23,16 @@ class SparseGNNTrainer(GNNBaseTrainer):
         for i, batch in enumerate(data_loader):
             batch = batch.to(self.device)
             self.model.zero_grad()
-            batch_output = self.model(batch)
-            batch_loss = self.loss_func(batch_output, batch.y, weight=batch.w)
-            batch_loss.backward()
-            self.optimizer.step()
-            sum_loss += batch_loss.item()
+            with torch.autograd.detect_anomaly():
+                batch_output = self.model(batch)
+                batch_loss = self.loss_func(batch_output, batch.y, weight=batch.w)
+                batch_loss.backward()
+                self.optimizer.step()
+                sum_loss += batch_loss.item()
             self.logger.debug('  train batch %i, loss %f', i, batch_loss.item())
+
+            # Check model weights for NANs
+            assert all(torch.isfinite(p).all().item() for p in self.model.parameters())
 
         # Summarize the epoch
         n_batches = i + 1
