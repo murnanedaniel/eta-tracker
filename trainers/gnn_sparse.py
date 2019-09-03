@@ -77,6 +77,14 @@ class SparseGNNTrainer(GNNBaseTrainer):
                          (summary['valid_loss'], summary['valid_acc']))
         return summary
 
+    @torch.no_grad()
+    def predict(self, data_loader):
+        preds, targets = [], []
+        for batch in data_loader:
+            preds.append(torch.sigmoid(self.model(batch)).squeeze(0))
+            targets.append(batch.y.squeeze(0))
+        return preds, targets
+
 def _test():
     t = SparseGNNTrainer(output_dir='./')
     t.build_model()

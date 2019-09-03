@@ -165,6 +165,10 @@ class GNNBaseTrainer(object):
         """Virtual method to evaluate a model"""
         raise NotImplementedError
 
+    def predict(self, data_loader):
+        """Virtual method to apply a model"""
+        raise NotImplementedError
+
     def train(self, train_data_loader, n_epochs, valid_data_loader=None):
         """Run the model training"""
 
