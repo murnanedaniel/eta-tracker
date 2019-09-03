@@ -6,7 +6,7 @@ trainer:
 data:
     name: hitgraphs_sparse
     input_dir: ${SCRATCH}/heptrkx/data/hitgraphs_high_000
-    n_train: 49152
+    n_train: 49152 #57344
     n_valid: 4096
     real_weight: 5 #6.25  # 0.5 / 0.08
     batch_size: 4
