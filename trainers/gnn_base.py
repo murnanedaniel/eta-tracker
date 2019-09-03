@@ -145,7 +145,8 @@ class GNNBaseTrainer(object):
             checkpoint_id = int(re.match(pattern, last_checkpoint).group(1))
         checkpoint_file = 'model_checkpoint_%03i.pth.tar' % checkpoint_id
         logging.info('Reloading checkpoint at %s', checkpoint_file)
-        checkpoint = torch.load(os.path.join(checkpoint_dir, checkpoint_file))
+        checkpoint = torch.load(os.path.join(checkpoint_dir, checkpoint_file),
+                                map_location=self.device)
         self.model.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
