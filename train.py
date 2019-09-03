@@ -7,6 +7,7 @@ import os
 import sys
 import argparse
 import logging
+import pickle
 
 # Externals
 import yaml
@@ -67,6 +68,13 @@ def load_config(config_file):
     with open(config_file) as f:
         return yaml.load(f, Loader=yaml.FullLoader)
 
+def save_config(config):
+    output_dir = config['output_dir']
+    config_file = os.path.join(output_dir, 'config.pkl')
+    logging.info('Writing config via pickle to %s', config_file)
+    with open(config_file, 'wb') as f:
+        pickle.dump(config, f)
+
 def main():
     """Main function"""
 
@@ -78,18 +86,22 @@ def main():
 
     # Load configuration
     config = load_config(args.config)
-    output_dir = os.path.expandvars(config.get('output_dir', None))
-    os.makedirs(output_dir, exist_ok=True)
+    config['output_dir'] = os.path.expandvars(config.get('output_dir', None))
+    os.makedirs(config['output_dir'], exist_ok=True)
 
     # Setup logging
-    config_logging(verbose=args.verbose, output_dir=output_dir,
+    config_logging(verbose=args.verbose, output_dir=config['output_dir'],
                    append=args.resume, rank=rank)
     logging.info('Initialized rank %i out of %i', rank, n_ranks)
     if args.show_config and (rank == 0):
         logging.info('Command line config: %s' % args)
     if rank == 0:
         logging.info('Configuration: %s', config)
-        logging.info('Saving job outputs to %s', output_dir)
+        logging.info('Saving job outputs to %s', config['output_dir'])
+
+    # Save configuration in the outptut directory
+    if rank == 0:
+        save_config(config)
 
     # Load the datasets
     is_distributed = (args.distributed is not None)
@@ -107,7 +119,7 @@ def main():
     gpu = (rank % args.ranks_per_node) if args.rank_gpu else args.gpu
     logging.info('Choosing GPU %s', gpu)
     trainer = get_trainer(distributed_mode=args.distributed,
-                          output_dir=output_dir,
+                          output_dir=config['output_dir'],
                           rank=rank, n_ranks=n_ranks,
                           gpu=gpu, **config['trainer'])
 
