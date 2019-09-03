@@ -38,11 +38,7 @@ def load_summaries(config):
 
 def load_model(config, reload_epoch):
     model_config = config['model']
-    model_config.pop('optimizer', None)
-    model_config.pop('learning_rate', None)
     model_config.pop('loss_func', None)
-    model_config.pop('lr_scaling', None)
-    model_config.pop('lr_warmup_epochs', None)
     model = get_model(**model_config)
 
     # Reload specified model checkpoint
