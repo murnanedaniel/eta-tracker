@@ -118,8 +118,12 @@ class GNNBaseTrainer(object):
     def write_checkpoint(self, checkpoint_id):
         """Write a checkpoint for the model"""
         assert self.output_dir is not None
+        # If using DistributedDataParallel, just save the wrapped model state
+        model_state_dict = (self.model.module.state_dict()
+                            if self.distributed_mode in ['ddp-file', 'ddp-mpi']
+                            else self.model.state_dict())
         checkpoint = dict(checkpoint_id=checkpoint_id,
-                          model=self.model.state_dict(),
+                          model=model_state_dict,
                           optimizer=self.optimizer.state_dict(),
                           lr_scheduler=self.lr_scheduler.state_dict())
         checkpoint_dir = os.path.join(self.output_dir, 'checkpoints')
@@ -147,7 +151,11 @@ class GNNBaseTrainer(object):
         logging.info('Reloading checkpoint at %s', checkpoint_file)
         checkpoint = torch.load(os.path.join(checkpoint_dir, checkpoint_file),
                                 map_location=self.device)
-        self.model.load_state_dict(checkpoint['model'])
+        # If using DistributedDataParallel, just load the wrapped model state
+        if self.distributed_mode in ['ddp-file', 'ddp-mpi']:
+            self.model.module.load_state_dict(checkpoint['model'])
+        else:
+            self.model.load_state_dict(checkpoint['model'])
         self.optimizer.load_state_dict(checkpoint['optimizer'])
         self.lr_scheduler.load_state_dict(checkpoint['lr_scheduler'])
 
