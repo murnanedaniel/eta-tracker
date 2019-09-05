@@ -1,4 +1,4 @@
-output_dir: ${SCRATCH}/heptrkx/results/resmpnn_001
+output_dir: ${SCRATCH}/heptrkx/results/resmpnn_002
 
 trainer:
     name: gnn_sparse
@@ -22,9 +22,9 @@ model:
     loss_func: binary_cross_entropy_with_logits
 
 optimizer:
-    name: Adam #SGD
-    #momentum: 0.9
-    learning_rate: 0.001
+    name: SGD
+    momentum: 0.9
+    learning_rate: 0.01
     lr_scaling: sqrt
     lr_warmup_epochs: 5
     lr_decay_schedule:
