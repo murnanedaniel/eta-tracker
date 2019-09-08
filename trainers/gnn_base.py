@@ -92,7 +92,8 @@ class GNNBaseTrainer(object):
 
         # PyTorch distributed data parallel
         if self.distributed_mode in ['ddp-file', 'ddp-mpi']:
-            self.model = DistributedDataParallel(self.model, device_ids=[self.gpu])
+            device_ids = [self.gpu] if self.gpu is not None else None
+            self.model = DistributedDataParallel(self.model, device_ids=device_ids)
 
         # Construct the loss function
         self.loss_func = getattr(nn.functional, loss_func)
