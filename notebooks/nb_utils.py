@@ -5,6 +5,7 @@ This file contains some common helper code for the analysis notebooks.
 # System
 import os
 import yaml
+import pickle
 from collections import namedtuple
 
 # Externals
@@ -16,11 +17,10 @@ import torch
 from torch.utils.data import Subset, DataLoader
 
 # Locals
-import sys
-sys.path.append('..')
 from models import get_model
-from datasets.hitgraphs import HitGraphDataset, collate_fn
-
+import datasets.hitgraphs
+from torch_geometric.data import Batch
+from datasets.hitgraphs_sparse import HitGraphDataset
 
 def get_output_dir(config):
     return os.path.expandvars(config['output_dir'])
@@ -28,9 +28,19 @@ def get_output_dir(config):
 def get_input_dir(config):
     return os.path.expandvars(config['data']['input_dir'])
 
-def load_config(config_file):
+def load_config_file(config_file):
+    """Load configuration from a specified yaml config file path"""
     with open(config_file) as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.FullLoader)
+
+def load_config_dir(result_dir):
+    """Load pickled config saved in a result directory"""
+    config_file = os.path.join(result_dir, 'config.pkl')
+    with open(config_file, 'rb') as f:
+        return pickle.load(f)
+
+# Back-compat
+load_config = load_config_file
 
 def load_summaries(config):
     summary_file = os.path.join(get_output_dir(config), 'summaries_0.csv')
@@ -56,10 +66,29 @@ def get_test_data_loader(config, n_test=16):
     full_dataset = get_dataset(config)
     test_indices = len(full_dataset) - 1 - torch.arange(n_test)
     test_dataset = Subset(full_dataset, test_indices)
-    return DataLoader(test_dataset, batch_size=1, collate_fn=collate_fn)
+    return DataLoader(test_dataset, batch_size=1, collate_fn=Batch.from_data_list)
+
+def get_dense_dataset(config):
+    return datasets.hitgraphs.HitGraphDataset(get_input_dir(config))
+
+def get_dense_test_data_loader(config, n_test=16):
+    # Take the test set from the back
+    full_dataset = get_dense_dataset(config)
+    test_indices = len(full_dataset) - 1 - torch.arange(n_test)
+    test_dataset = Subset(full_dataset, test_indices)
+    return DataLoader(test_dataset, batch_size=1,
+                      collate_fn=datasets.hitgraphs.collate_fn)
 
 @torch.no_grad()
 def apply_model(model, data_loader):
+    preds, targets = [], []
+    for batch in data_loader:
+        preds.append(torch.sigmoid(model(batch)).squeeze(0))
+        targets.append(batch.y.squeeze(0))
+    return preds, targets
+
+@torch.no_grad()
+def apply_dense_model(model, data_loader):
     preds, targets = [], []
     for inputs, target in data_loader:
         preds.append(model(inputs).squeeze(0))
@@ -193,3 +222,35 @@ def draw_sample(X, Ri, Ro, y, cmap='bwr_r', alpha_labels=True, figsize=(15, 7)):
     ax0.set_ylabel('$r$')
     ax1.set_ylabel('$r$')
     plt.tight_layout()
+
+
+def draw_sample_xy(hits, edges, preds, labels, cut=0.5, figsize=(16, 16)):
+    x = hits[:,0] * np.cos(hits[:,1])
+    y = hits[:,0] * np.sin(hits[:,1])
+    fig, ax0 = plt.subplots(figsize=figsize)
+
+    # Draw the hits
+    ax0.scatter(x, y, s=2, c='k')
+
+    # Draw the segments
+    for j in range(labels.shape[0]):
+
+        # False negatives
+        if preds[j] < cut and labels[j] > cut:
+            ax0.plot([x[edges[0,j]], x[edges[1,j]]],
+                     [y[edges[0,j]], y[edges[1,j]]],
+                     '--', c='b')
+
+        # False positives
+        if preds[j] > cut and labels[j] < cut:
+            ax0.plot([x[edges[0,j]], x[edges[1,j]]],
+                     [y[edges[0,j]], y[edges[1,j]]],
+                     '-', c='r', alpha=preds[j])
+
+        # True positives
+        if preds[j] > cut and labels[j] > cut:
+            ax0.plot([x[edges[0,j]], x[edges[1,j]]],
+                     [y[edges[0,j]], y[edges[1,j]]],
+                     '-', c='k', alpha=preds[j])
+
+    return fig, ax0
