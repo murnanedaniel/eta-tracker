@@ -98,6 +98,8 @@ def main():
     if rank == 0:
         logging.info('Configuration: %s', config)
         logging.info('Saving job outputs to %s', config['output_dir'])
+        if args.distributed is not None:
+            logging.info('Using distributed mode: %s', args.distributed)
 
     # Save configuration in the outptut directory
     if rank == 0:
@@ -107,7 +109,8 @@ def main():
     is_distributed = (args.distributed is not None)
     # Workaround because multi-process I/O not working with MPI backend
     if args.distributed in ['ddp-mpi', 'cray']:
-        logging.info('Disabling I/O workers because of MPI issue')
+        if rank == 0:
+            logging.info('Disabling I/O workers because of MPI issue')
         config['data']['n_workers'] = 0
     train_data_loader, valid_data_loader = get_data_loaders(
         distributed=is_distributed, rank=rank, n_ranks=n_ranks, **config['data'])
@@ -117,7 +120,8 @@ def main():
 
     # Load the trainer
     gpu = (rank % args.ranks_per_node) if args.rank_gpu else args.gpu
-    logging.info('Choosing GPU %s', gpu)
+    if gpu is not None:
+        logging.info('Choosing GPU %s', gpu)
     trainer = get_trainer(distributed_mode=args.distributed,
                           output_dir=config['output_dir'],
                           rank=rank, n_ranks=n_ranks,
