@@ -33,6 +33,7 @@ def parse_args():
     add_arg('--resume', action='store_true', help='Resume from last checkpoint')
     add_arg('--show-config', action='store_true')
     add_arg('--interactive', action='store_true')
+    add_arg('--output-dir', help='override output_dir setting')
     return parser.parse_args()
 
 def config_logging(verbose, output_dir, append=False, rank=0):
@@ -64,9 +65,14 @@ def init_workers(dist_mode):
         return init_workers_cray()
     return 0, 1
 
-def load_config(config_file):
+def load_config(config_file, output_dir=None):
     with open(config_file) as f:
-        return yaml.load(f, Loader=yaml.FullLoader)
+        config = yaml.load(f, Loader=yaml.FullLoader)
+    # Update config from command line, and expand paths
+    if output_dir is not None:
+        config['output_dir'] = output_dir
+    config['output_dir'] = os.path.expandvars(config['output_dir'])
+    return config
 
 def save_config(config):
     output_dir = config['output_dir']
@@ -85,8 +91,7 @@ def main():
     rank, n_ranks = init_workers(args.distributed)
 
     # Load configuration
-    config = load_config(args.config)
-    config['output_dir'] = os.path.expandvars(config.get('output_dir', None))
+    config = load_config(args.config, output_dir=args.output_dir)
     os.makedirs(config['output_dir'], exist_ok=True)
 
     # Setup logging
