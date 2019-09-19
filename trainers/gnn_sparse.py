@@ -4,6 +4,7 @@ This module defines a generic trainer for simple models and datasets.
 
 # Externals
 import torch
+import torch.distributed as dist
 
 # Locals
 from .gnn_base import GNNBaseTrainer
@@ -24,7 +25,15 @@ class SparseGNNTrainer(GNNBaseTrainer):
             batch = batch.to(self.device)
             self.model.zero_grad()
             batch_output = self.model(batch)
-            batch_loss = self.loss_func(batch_output, batch.y, weight=batch.w)
+
+            # We normalize the loss by the average number of targets per worker
+            # to ensure the correct averaging of gradients in backward pass.
+            n_targets = torch.tensor(batch_output.shape[0]).to(self.device)
+            dist.all_reduce(n_targets)
+            n_targets = n_targets / self.n_ranks
+            batch_loss = self.loss_func(batch_output, batch.y,
+                                        weight=batch.w, reduction='sum') / n_targets
+
             batch_loss.backward()
             self.optimizer.step()
             sum_loss += batch_loss.item()
