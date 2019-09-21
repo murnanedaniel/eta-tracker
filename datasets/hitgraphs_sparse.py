@@ -5,6 +5,7 @@ import os
 
 # External imports
 import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset, random_split
 import torch_geometric
@@ -23,10 +24,16 @@ def load_graph(filename):
 class HitGraphDataset(Dataset):
     """PyTorch dataset specification for hit graphs"""
 
-    def __init__(self, input_dir, n_samples=None, real_weight=1.0):
-        input_dir = os.path.expandvars(input_dir)
-        filenames = [os.path.join(input_dir, f) for f in os.listdir(input_dir)
-                     if f.startswith('event') and not f.endswith('_ID.npz')]
+    def __init__(self, input_dir=None, filelist=None, n_samples=None, real_weight=1.0):
+        if filelist is not None:
+            self.metadata = pd.read_csv(os.path.expandvars(filelist))
+            filenames = self.metadata.file.values
+        elif input_dir is not None:
+            input_dir = os.path.expandvars(input_dir)
+            filenames = [os.path.join(input_dir, f) for f in os.listdir(input_dir)
+                         if f.startswith('event') and not f.endswith('_ID.npz')]
+        else:
+            raise Exception('Must provide either input_dir or filelist to HitGraphDataset')
         self.filenames = filenames if n_samples is None else filenames[:n_samples]
         self.real_weight = real_weight
         self.fake_weight = real_weight / (2 * real_weight - 1)
@@ -42,8 +49,9 @@ class HitGraphDataset(Dataset):
     def __len__(self):
         return len(self.filenames)
 
-def get_datasets(input_dir, n_train, n_valid, real_weight=1.0):
-    data = HitGraphDataset(input_dir, n_train + n_valid, real_weight=real_weight)
+def get_datasets(n_train, n_valid, input_dir=None, filelist=None, real_weight=1.0):
+    data = HitGraphDataset(input_dir=input_dir, filelist=filelist,
+                           n_samples=n_train+n_valid, real_weight=real_weight)
     # Split into train and validation
     train_data, valid_data = random_split(data, [n_train, n_valid])
     return train_data, valid_data
