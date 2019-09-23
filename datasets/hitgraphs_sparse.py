@@ -52,6 +52,8 @@ class HitGraphDataset(Dataset):
 def get_datasets(n_train, n_valid, input_dir=None, filelist=None, real_weight=1.0):
     data = HitGraphDataset(input_dir=input_dir, filelist=filelist,
                            n_samples=n_train+n_valid, real_weight=real_weight)
+    # Deterministic dataset splitting
+    torch.manual_seed(1)
     # Split into train and validation
     train_data, valid_data = random_split(data, [n_train, n_valid])
     return train_data, valid_data
