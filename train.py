@@ -93,7 +93,8 @@ def main():
     rank, n_ranks = init_workers(args.distributed)
 
     # Load configuration
-    config = load_config(args.config, output_dir=args.output_dir)
+    config = load_config(args.config, output_dir=args.output_dir,
+                         n_ranks=n_ranks)
     os.makedirs(config['output_dir'], exist_ok=True)
 
     # Setup logging
