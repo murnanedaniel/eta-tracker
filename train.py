@@ -65,13 +65,15 @@ def init_workers(dist_mode):
         return init_workers_cray()
     return 0, 1
 
-def load_config(config_file, output_dir=None):
+def load_config(config_file, output_dir=None, **kwargs):
     with open(config_file) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     # Update config from command line, and expand paths
     if output_dir is not None:
         config['output_dir'] = output_dir
     config['output_dir'] = os.path.expandvars(config['output_dir'])
+    for key, val in kwargs.items():
+        config[key] = val
     return config
 
 def save_config(config):
