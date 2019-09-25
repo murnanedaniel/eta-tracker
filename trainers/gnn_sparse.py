@@ -28,7 +28,8 @@ class SparseGNNTrainer(GNNBaseTrainer):
 
             # We normalize the loss by the average number of targets per worker
             # to ensure the correct averaging of gradients in backward pass.
-            n_targets = torch.tensor(batch_output.shape[0]).to(self.device)
+            #n_targets = torch.tensor(batch_output.shape[0]).to(self.device)
+            n_targets = batch.w.sum() # use weights!
             dist.all_reduce(n_targets)
             n_targets = n_targets / self.n_ranks
             batch_loss = self.loss_func(batch_output, batch.y,
