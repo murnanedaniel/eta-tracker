@@ -194,6 +194,7 @@ class GNNBaseTrainer(object):
             # Train on this epoch
             start_time = time.time()
             summary = self.train_epoch(train_data_loader)
+            self.lr_scheduler.step()
             summary['epoch'] = epoch
             summary['train_time'] = time.time() - start_time
 
