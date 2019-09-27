@@ -12,6 +12,7 @@ import pickle
 # Externals
 import yaml
 import numpy as np
+import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
@@ -34,6 +35,7 @@ def parse_args():
     add_arg('--show-config', action='store_true')
     add_arg('--interactive', action='store_true')
     add_arg('--output-dir', help='override output_dir setting')
+    add_arg('--seed', type=int, default=0, help='random seed')
     return parser.parse_args()
 
 def config_logging(verbose, output_dir, append=False, rank=0):
@@ -108,6 +110,12 @@ def main():
         logging.info('Saving job outputs to %s', config['output_dir'])
         if args.distributed is not None:
             logging.info('Using distributed mode: %s', args.distributed)
+
+    # Reproducible training
+    torch.manual_seed(args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(args.seed + 10)
 
     # Save configuration in the outptut directory
     if rank == 0:
