@@ -12,6 +12,7 @@ import pickle
 # Externals
 import yaml
 import numpy as np
+import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 
@@ -34,6 +35,7 @@ def parse_args():
     add_arg('--show-config', action='store_true')
     add_arg('--interactive', action='store_true')
     add_arg('--output-dir', help='override output_dir setting')
+    add_arg('--seed', type=int, default=0, help='random seed')
     return parser.parse_args()
 
 def config_logging(verbose, output_dir, append=False, rank=0):
@@ -65,13 +67,15 @@ def init_workers(dist_mode):
         return init_workers_cray()
     return 0, 1
 
-def load_config(config_file, output_dir=None):
+def load_config(config_file, output_dir=None, **kwargs):
     with open(config_file) as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
     # Update config from command line, and expand paths
     if output_dir is not None:
         config['output_dir'] = output_dir
     config['output_dir'] = os.path.expandvars(config['output_dir'])
+    for key, val in kwargs.items():
+        config[key] = val
     return config
 
 def save_config(config):
@@ -91,7 +95,8 @@ def main():
     rank, n_ranks = init_workers(args.distributed)
 
     # Load configuration
-    config = load_config(args.config, output_dir=args.output_dir)
+    config = load_config(args.config, output_dir=args.output_dir,
+                         n_ranks=n_ranks)
     os.makedirs(config['output_dir'], exist_ok=True)
 
     # Setup logging
@@ -105,6 +110,12 @@ def main():
         logging.info('Saving job outputs to %s', config['output_dir'])
         if args.distributed is not None:
             logging.info('Using distributed mode: %s', args.distributed)
+
+    # Reproducible training
+    torch.manual_seed(args.seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(args.seed + 10)
 
     # Save configuration in the outptut directory
     if rank == 0:
