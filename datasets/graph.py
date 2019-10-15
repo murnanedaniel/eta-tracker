@@ -38,5 +38,5 @@ def load_graph(filename):
     with np.load(filename) as f:
         return sparse_to_graph(**dict(f.items()))
 
-def load_graphs(filenames, graph_type=Graph):
-    return [load_graph(f, graph_type) for f in filenames]
+def load_graphs(filenames):
+    return [load_graph(f) for f in filenames]

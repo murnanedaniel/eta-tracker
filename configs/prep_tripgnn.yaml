@@ -1,0 +1,13 @@
+# Input/output configuration
+input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/trackml/train_100_events
+output_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/data/hitgraphs_small_000
+n_files: 10
+
+# Graph building configuration
+selection:
+    pt_min: 1 # GeV
+    phi_slope_max: 0.001
+    z0_max: 200
+    n_phi_sections: 4
+    n_eta_sections: 1
+    eta_range: [-5, 5]

@@ -115,8 +115,9 @@ def construct_graph(hits, layer_pairs,
     pid1 = hits.particle_id.loc[segments.index_1].values
     pid2 = hits.particle_id.loc[segments.index_2].values
     y[:] = (pid1 == pid2)
+    pid = pid1*y
     # Return a tuple of the results
-    return Graph(X, Ri, Ro, y), I
+    return Graph(X, Ri, Ro, y), I, pid
 
 def select_hits(hits, truth, particles, pt_min=0):
     # Barrel volume and layer ids
@@ -203,6 +204,7 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
               for section_hits in hits_sections]
     graphs = [x[0] for x in graphs_all]
     IDs    = [x[1] for x in graphs_all]
+    pids   = [x[2] for x in graphs_all]
 
     # Write these graphs to the output directory
     try:
@@ -211,12 +213,16 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
                      for i in range(len(graphs))]
         filenames_ID = [os.path.join(output_dir, '%s_g%03i_ID' % (base_prefix, i))
                      for i in range(len(graphs))]
+        filenames_pid = [os.path.join(output_dir, '%s_g%03i_pid' % (base_prefix, i))
+                     for i in range(len(graphs))]
     except Exception as e:
         logging.info(e)
     logging.info('Event %i, writing graphs', evtid)
     save_graphs(graphs, filenames)
     for ID, file_name in zip(IDs, filenames_ID):
         np.savez(file_name, ID=ID)
+    for pid, file_name in zip(pids, filenames_pid):
+        np.savez(file_name, pid=pid)
 
 def main():
     """Main function"""
