@@ -10,6 +10,7 @@ import argparse
 import logging
 import multiprocessing as mp
 from functools import partial
+import time
 
 # Externals
 import yaml
@@ -117,7 +118,7 @@ def construct_graph(hits, layer_pairs,
     y[:] = (pid1 == pid2)
     pid = pid1*y
     # Return a tuple of the results
-    return Graph(X, Ri, Ro, y), I, pid
+    return Graph(X, Ri, Ro, y, pid), I
 
 def select_hits(hits, truth, particles, pt_min=0):
     # Barrel volume and layer ids
@@ -197,6 +198,7 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
 
     # Construct the graph
     logging.info('Event %i, constructing graphs' % evtid)
+    tic = time.time()
     graphs_all = [construct_graph(section_hits, layer_pairs=layer_pairs,
                               phi_slope_max=phi_slope_max, z0_max=z0_max,
                               feature_names=feature_names,
@@ -204,8 +206,9 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
               for section_hits in hits_sections]
     graphs = [x[0] for x in graphs_all]
     IDs    = [x[1] for x in graphs_all]
-    pids   = [x[2] for x in graphs_all]
-
+    # pids   = [x[2] for x in graphs_all]
+    toc = time.time()
+    logging.info('Graph construction time: %f' % (toc-tic))
     # Write these graphs to the output directory
     try:
         base_prefix = os.path.basename(prefix)
@@ -221,8 +224,8 @@ def process_event(prefix, output_dir, pt_min, n_eta_sections, n_phi_sections,
     save_graphs(graphs, filenames)
     for ID, file_name in zip(IDs, filenames_ID):
         np.savez(file_name, ID=ID)
-    for pid, file_name in zip(pids, filenames_pid):
-        np.savez(file_name, pid=pid)
+    # for pid, file_name in zip(pids, filenames_pid):
+    #     np.savez(file_name, pid=pid)
 
 def main():
     """Main function"""

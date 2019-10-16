@@ -1,7 +1,10 @@
 # Input/output configuration
-input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/trackml/train_100_events
-output_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/data/hitgraphs_small_000
+input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_data/hitgraphs_tiny
+output_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/triplet_data/hitgraphs_tiny
 n_files: 10
+
+# Doublet trainer model
+doublet_model_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_results/agnn01
 
 # Graph building configuration
 selection:
