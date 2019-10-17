@@ -6,17 +6,17 @@ trainer:
 data:
     name: hitgraphs_sparse
     input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_data/hitgraphs_tiny
-    n_train: 10 #57344
-    n_valid: 1
+    n_train: 200 #57344
+    n_valid: 10
     real_weight: 5 #6.25  # 0.5 / 0.08
-    batch_size: 1
+    batch_size: 8
     n_workers: 1
 
 model:
     name: agnn
     input_dim: 3
     hidden_dim: 64
-    n_graph_iters: 8
+    n_graph_iters: 4
     layer_norm: true
     loss_func: binary_cross_entropy_with_logits
 
@@ -28,7 +28,7 @@ optimizer:
     lr_warmup_epochs: 1
     lr_decay_schedule:
         - {start_epoch: 10, end_epoch: 20, factor: 0.1}
-        - {start_epoch: 20, end_epoch: 30, factor: 0.01}
+        - {start_epoch: 20, end_epoch: 32, factor: 0.01}
 
 training:
-    n_epochs: 10
+    n_epochs: 32
