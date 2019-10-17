@@ -53,56 +53,13 @@ Doublet preparation script makes graphs of (X, Ri, Ro, y, pid) -> Doublet traine
 -> Makes graph of ([Xi,Xo,edge_score], triplet_e, y) and saves -> Triplet trainer loads graph -> Triplets trained
 """
 
+
+def select_hits():
+    """ Future-proofing: May select triplets based on angle between doublets"""
+    pass
+
 def load_pid(filename):
     return np.load(filename)["pid"]
-
-def get_edge_scores(result_name):
-    """
-    - Takes config info for triplet training dataset (different from doublet training dataset),
-    - Runs the dataset through the trained doublet network,
-    - Returns edge scores with same indices as edge network input
-    """
-
-    # Load by config file
-    config_file = 'configs/tripgnn.yaml'
-    config = load_config_file(config_file)
-    summaries = load_summaries(config)
-
-    # Load by directory (preferred)
-    result_base = os.path.expandvars('/mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/results')
-
-    result_dir = os.path.join(result_base, result_name)
-
-    config = load_config_dir(result_dir)
-    print('Configuration:')
-    pp(config)
-
-    summaries = load_summaries(config)
-    print('\nTraining summaries:')
-    pp(summaries)
-
-    # Find the best epoch
-    best_idx = summaries.valid_loss.idxmin()
-    summaries.loc[[best_idx]]
-
-    # Build the trainer and load best checkpoint
-    trainer = get_trainer(output_dir=config['output_dir'], **config['trainer'])
-    trainer.build_model(optimizer_config=config['optimizer'], **config['model'])
-
-    best_epoch = summaries.epoch.loc[best_idx]
-    trainer.load_checkpoint(checkpoint_id=best_epoch)
-
-    print(trainer.model)
-    print('Parameters:', sum(p.numel() for p in trainer.model.parameters()))
-
-    # Load the test dataset
-    n_test = 10
-    test_loader = get_test_data_loader(config, n_test=n_test)
-    # Apply the model
-    test_preds, test_targets = trainer.predict(test_loader)
-    doublet_data = test_loader.dataset
-
-    return test_preds, doublet_data
 
 def load_doublet_data():
 
@@ -118,40 +75,81 @@ def load_doublet_data():
 
     return doublet_data, pid_data
 
+def get_edge_scores(result_dir, n_graphs):
+    """
+    - Takes config info for triplet training dataset (different from doublet training dataset),
+    - Runs the dataset through the trained doublet network,
+    - Returns edge scores with same indices as edge network input
+    """
+
+    # Load configs
+    config = load_config_dir(result_dir)
+    logging.info('Training doublets on model configuration:')
+    logging.info(config)
+
+    # Find the best epoch
+    summaries = load_summaries(config)
+    best_idx = summaries.valid_loss.idxmin()
+    summaries.loc[[best_idx]]
+
+    # Build the trainer and load best checkpoint
+    trainer = get_trainer(output_dir=config['output_dir'], **config['trainer'])
+    trainer.build_model(optimizer_config=config['optimizer'], **config['model'])
+
+    best_epoch = summaries.epoch.loc[best_idx]
+    trainer.load_checkpoint(checkpoint_id=best_epoch)
+
+    logging.info("With weight system:")
+    logging.info(trainer.model)
+    # print('Parameters:', sum(p.numel() for p in trainer.model.parameters()))
+
+    # Load the test dataset
+
+    test_loader = get_test_data_loader(config, n_test=n_graphs)
+    # Apply the model
+    test_preds, test_targets = trainer.predict(test_loader)
+    doublet_data = test_loader.dataset
+
+    return test_preds, doublet_data
+
+
 def edge_to_triplet(start, end, n_edges, n_hits):
+    """
+    An efficient algorithm to convert between an edge matrix and a triplet matrix
+    """
     Ri = np.zeros((n_hits+1, n_edges))
     Ro = np.zeros((n_hits+1, n_edges))
     Ri[start, np.arange(n_edges)]=1
     Ro[end, np.arange(n_edges)]=1
     Riwhere = [np.nonzero(t)[0] for t in Ri]
     Rowhere = [np.nonzero(t)[0] for t in Ro]
-    Riwhere, Rowhere
     E = [np.stack(np.meshgrid(j, i),-1).reshape(-1,2) for i,j in zip(Riwhere, Rowhere)]
     return np.concatenate(E).T
 
 def construct_triplet_graph(x,e,pid,o):
     """
     Very similar to doublet graph builder. May take some pruning parameters.
-    Will take output from doublet network, so should use numpy.
-    - Takes feature list X, edge_index matrix, particle_id list (stored as
-    sparse edge list [0,0,0,100,0,2,...] or densely {3:100,5:2,...}),
-    - Concatenate Xi, Xo along edge_indices
-    - Build triplet_edge_index matrix e
-    - Build ground truth triplet_y
-    - PRUNING?
-    - Returns Graph([Xi,Xo], Ri/Ro, triplet_y)
-    - NOTE: That means we use hitgraph_builder as in doublet case
+    Takes output from doublet network.
     """
 
+    # Initialise useful values
     start, end = e
     n_edges = len(start)
     n_hits = np.max(e)
+
+    # Build triplet edge index matrix
     triplet_index = edge_to_triplet(start, end, n_edges, n_hits)
     n_triplets = triplet_index.shape[1]
+
+    # Concatenate features by edge index
     triplet_X = np.concatenate([x[e[0]],x[e[1]],np.array([o]).T], axis=1)
+
+    # Ground truth vector from THREE matching pids in the triplet edge
     triplet_y = np.zeros(n_triplets, dtype=np.float32)
-    triplet_y = pid[triplet_index[0]] == pid[triplet_index[1]]
-    # triplet_pid = triplet_y*pid[triplet_index[0]]
+    triplet_y[:] = pid[triplet_index[0]] == pid[triplet_index[1]]
+
+    # Convert the triplet_index matrix back to association matrices
+    # NOTE: This is an inefficient process, since this is converted back later...
     triplet_Ri = np.zeros((n_edges, n_triplets), dtype=np.uint8)
     triplet_Ro = np.zeros((n_edges, n_triplets), dtype=np.uint8)
     triplet_Ri[triplet_index[0], np.arange(n_triplets)] = 1
@@ -161,31 +159,26 @@ def construct_triplet_graph(x,e,pid,o):
     # return SparseGraph(X, edge_index, y)
 
 
-def select_hits():
-    """ Future-proofing: May select triplets based on angle between doublets"""
-    pass
-
-
-
-def process_events(prefix, output_dir):
+def process_events(output_dir, result_dir, n_files):
     """ Handles all events, returns nothing. As in doublet case"""
 
     # doublet_data, pid_data = load_doublet_data()
-    edge_scores, doublet_data = get_edge_scores(doublet_filenames)
+    edge_scores, doublet_data = get_edge_scores(result_dir, n_files)
     print("All data loaded")
     graphs_all = []
 
     for gi, oi, i in zip(doublet_data, edge_scores, np.arange(len(doublet_data))):
         x, e, pid, o = gi.x.numpy(), gi.edge_index.numpy(), gi.pid.numpy(), oi.numpy() # Divide out feature_scale???
-        print("Constructing graph " + str(i) + " in file " + result_name + "i")
-        all_graphs.append(construct_triplet_graph(x,e,pid,o))
+        logging.info("Constructing graph " + str(i))
+        graphs_all.append(construct_triplet_graph(x,e,pid,o))
 
     try:
-        base_prefix = os.path.basename(prefix)
-        filenames = [os.path.join(output_dir, '%s_g%03i' % (base_prefix, i))
+        filenames = [os.path.join(output_dir, 'g_%03i' % i)
                      for i in range(len(graphs_all))]
+    except Exception as e:
+        logging.info(e)
 
-    save_graphs(all_graphs, filenames)
+    save_graphs(graphs_all, filenames)
 
     # """ List comprehension would be nicer... """
     # all_graphs = [construct_triplet_graph(gi.x.numpy(), gi.edge_index.numpy(), gi.pid.numpy(), oi.numpy())
@@ -195,7 +188,7 @@ def process_events(prefix, output_dir):
 def main():
     """ Main function """
 
-    Parse args
+    # Parse args
     args = parse_args()
 
     # Setup logging
@@ -212,20 +205,12 @@ def main():
     if args.task == 0:
         logging.info('Configuration: %s' % config)
 
-    input_dir = config['input_dir']
-    all_files = os.listdir(input_dir)
-    suffix = ''
+    result_dir = config['doublet_model_dir']
+    output_dir = config['output_dir']
 
-    # train_data_loader, valid_data_loader = get_data_loaders(
-    #     distributed=is_distributed, rank=rank, n_ranks=n_ranks, **config['data'])
-    # logging.info('Loaded %g training samples', len(train_data_loader.dataset))
+    process_events(output_dir, result_dir, config['n_graphs'])
 
-    # edge_scores = get_edge_scores()
-
-    doublet_filenames = "agnn01"
-    output_filenames =
-
-    process_events(result_name, )
+    logging.info('Processing finished')
 
 
 if __name__ == '__main__':

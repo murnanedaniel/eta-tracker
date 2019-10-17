@@ -1,7 +1,7 @@
 # Input/output configuration
 input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/trackml/train_100_events
 output_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_data/hitgraphs_tiny
-n_files: 10
+n_files: 100
 
 # Graph building configuration
 selection:

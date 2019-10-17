@@ -6,7 +6,7 @@ trainer:
 data:
     name: hitgraphs_sparse
     input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_data/hitgraphs_tiny
-    n_train: 1 #57344
+    n_train: 10 #57344
     n_valid: 1
     real_weight: 5 #6.25  # 0.5 / 0.08
     batch_size: 1
@@ -31,4 +31,4 @@ optimizer:
         - {start_epoch: 20, end_epoch: 30, factor: 0.01}
 
 training:
-    n_epochs: 1
+    n_epochs: 10

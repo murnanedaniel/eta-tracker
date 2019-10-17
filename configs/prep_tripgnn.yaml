@@ -1,7 +1,7 @@
 # Input/output configuration
 input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_data/hitgraphs_tiny
 output_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/triplet_data/hitgraphs_tiny
-n_files: 10
+n_graphs: 40
 
 # Doublet trainer model
 doublet_model_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_results/agnn01

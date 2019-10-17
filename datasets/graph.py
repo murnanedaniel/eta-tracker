@@ -13,7 +13,8 @@ Graph = namedtuple('Graph', ['X', 'Ri', 'Ro', 'y', 'pid'], defaults=(None,))
 def graph_to_sparse(graph):
     Ri_rows, Ri_cols = graph.Ri.nonzero()
     Ro_rows, Ro_cols = graph.Ro.nonzero()
-    return dict(X=graph.X, y=graph.y, pid=graph.pid,
+    pid = [] if graph.pid is None else graph.pid
+    return dict(X=graph.X, y=graph.y, pid=pid,
                 Ri_rows=Ri_rows, Ri_cols=Ri_cols,
                 Ro_rows=Ro_rows, Ro_cols=Ro_cols)
 

@@ -84,7 +84,7 @@ class GNNSegmentClassifier(nn.Module):
     def forward(self, inputs):
         """Apply forward pass of the model"""
         # Apply input network to get hidden representation
-        # print("Input: ", inputs.x, " with shape: ", inputs.x.shape)
+        print("Input: ", inputs.x, " with shape: ", inputs.x.shape)
         x = self.input_network(inputs.x)
         # print("Input network features: ", x, " with shape: ", x.shape)
         # Shortcut connect the inputs onto the hidden representation
@@ -95,14 +95,14 @@ class GNNSegmentClassifier(nn.Module):
             # print("Iteration: ", i)
             # Apply edge network
             e = torch.sigmoid(self.edge_network(x, inputs.edge_index))
-            # print("Edge scores: ", e, " with shape: ", e.shape)
+            print("Edge scores: ", e, " with shape: ", e.shape)
             # Apply node network
             x = self.node_network(x, e, inputs.edge_index)
-            # print("Node network features: ", x, " with shape: ", x.shape)
+            print("Node network features: ", x, " with shape: ", x.shape)
             # Shortcut connect the inputs onto the hidden representation
             x = torch.cat([x, inputs.x], dim=-1)
             # print("Concat node features: ", x, " with shape: ", x.shape)
         # Apply final edge network
         output = self.edge_network(x, inputs.edge_index)
-        # print("Output: ", output,  " with shape: ", output.shape)
+        print("Output: ", output,  " with shape: ", output.shape)
         return output
