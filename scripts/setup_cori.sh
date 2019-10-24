@@ -1,5 +1,5 @@
 # Software environment setup for Cori Haswell and KNL
-module load pytorch/v1.2.0
+module load pytorch/v1.1.0
 
 # Custom conda env with cray plugin installed
 #conda activate /global/cscratch1/sd/sfarrell/conda/pytorch/v1.1.0-cray

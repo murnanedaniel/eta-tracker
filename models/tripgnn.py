@@ -104,5 +104,5 @@ class GNNSegmentClassifier(nn.Module):
             # print("Concat node features: ", x, " with shape: ", x.shape)
         # Apply final edge network
         output = self.edge_network(x, inputs.edge_index)
-        print("Output: ", output,  " with shape: ", output.shape)
+        #print("Output: ", output,  " with shape: ", output.shape)
         return output

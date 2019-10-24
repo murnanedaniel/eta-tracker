@@ -223,7 +223,7 @@ def draw_sample(X, Ri, Ro, y, cmap='bwr_r', alpha_labels=True, figsize=(15, 7)):
     ax1.set_ylabel('$r$')
     plt.tight_layout()
 
-
+    
 def draw_sample_xy(hits, edges, preds, labels, cut=0.5, figsize=(16, 16)):
     x = hits[:,0] * np.cos(hits[:,1])
     y = hits[:,0] * np.sin(hits[:,1])
@@ -251,6 +251,37 @@ def draw_sample_xy(hits, edges, preds, labels, cut=0.5, figsize=(16, 16)):
         if preds[j] > cut and labels[j] > cut:
             ax0.plot([x[edges[0,j]], x[edges[1,j]]],
                      [y[edges[0,j]], y[edges[1,j]]],
+                     '-', c='k', alpha=preds[j])
+
+    return fig, ax0
+
+def draw_triplets_xy(hits, edges, preds, labels, cut=0.5, figsize=(16, 16)):
+    xi, yi = [hits[:,0] * np.cos(hits[:,1]), hits[:,0] * np.sin(hits[:,1])]
+    xo, yo = [hits[:,3] * np.cos(hits[:,4]), hits[:,3] * np.sin(hits[:,4])]
+    fig, ax0 = plt.subplots(figsize=figsize)
+
+    #Draw the hits
+    ax0.scatter(xi, yi, s=2, c='k')
+
+    # Draw the segments
+    for j in range(labels.shape[0]):
+
+        # False negatives
+        if preds[j] < cut and labels[j] > cut:
+            ax0.plot([xi[edges[0,j]], xo[edges[0,j]]],
+                     [yi[edges[0,j]], yo[edges[0,j]]],
+                     '--', c='b')
+
+        # False positives
+        if preds[j] > cut and labels[j] < cut:
+            ax0.plot([xi[edges[0,j]], xo[edges[0,j]]],
+                     [yi[edges[0,j]], yo[edges[0,j]]],
+                     '-', c='r', alpha=preds[j])
+
+        # True positives
+        if preds[j] > cut and labels[j] > cut:
+            ax0.plot([xi[edges[0,j]], xo[edges[0,j]]],
+                     [yi[edges[0,j]], yo[edges[0,j]]],
                      '-', c='k', alpha=preds[j])
 
     return fig, ax0

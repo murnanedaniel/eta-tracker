@@ -1,27 +1,34 @@
-output_dir: ${SCRATCH}/heptrkx/results/agnn_med_000
+output_dir: /global/cscratch1/sd/danieltm/ExaTrkX/doublet_results/agnn03
 
 trainer:
     name: gnn_sparse
 
 data:
     name: hitgraphs_sparse
-    input_dir: ${SCRATCH}/heptrkx/data/hitgraphs_med_002
-    n_train: 16384
-    n_valid: 2048
-    real_weight: 2.5   # 0.5 / 0.2
-    batch_size: 1
+    input_dir: /global/cscratch1/sd/danieltm/ExaTrkX/doublet_data/hitgraphs_med_000
+    n_train: 2000 #57344
+    n_valid: 20
+    real_weight: 3. #6.25  # 0.5 / 0.08
+    batch_size: 4
     n_workers: 4
 
 model:
     name: agnn
     input_dim: 3
     hidden_dim: 64
+    layer_norm: true
     n_graph_iters: 4
     loss_func: binary_cross_entropy_with_logits
 
 optimizer:
-    name: Adam
+    name: Adam #SGD
+    #momentum: 0.9
     learning_rate: 0.001
+    lr_scaling: sqrt
+    lr_warmup_epochs: 5
+    lr_decay_schedule:
+        - {start_epoch: 15, end_epoch: 45, factor: 0.1}
+        - {start_epoch: 45, end_epoch: 64, factor: 0.01}
 
 training:
     n_epochs: 64
