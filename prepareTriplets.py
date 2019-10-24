@@ -21,7 +21,7 @@ from torch_scatter import scatter_add
 import trackml.dataset
 
 # Locals
-from datasets.graph import Graph, save_graphs
+from datasets.graph import Graph, save_graph
 from datasets import get_data_loaders
 from trainers import get_trainer
 from datasets.graph import Graph, save_graphs, save_graph
@@ -154,37 +154,53 @@ def construct_triplet_graph(x,e,pid,o):
     triplet_Ro = np.zeros((n_edges, n_triplets), dtype=np.uint8)
     triplet_Ri[triplet_index[0], np.arange(n_triplets)] = 1
     triplet_Ro[triplet_index[1], np.arange(n_triplets)] = 1
-
+    
+    
     return Graph(triplet_X, triplet_Ri, triplet_Ro, triplet_y)
     # return SparseGraph(X, edge_index, y)
 
 
-def process_events(output_dir, result_dir, n_files):
+def process_event(data_row, output_dir):
     """ Handles all events, returns nothing. As in doublet case"""
 
     # doublet_data, pid_data = load_doublet_data()
+
+#     for gi, oi, i in zip(doublet_data, edge_scores, np.arange(len(doublet_data))):
+#         x, e, pid, o = gi.x.numpy(), gi.edge_index.numpy(), gi.pid.numpy(), oi.numpy() # Divide out feature_scale???
+#         logging.info("Constructing graph " + str(i))
+#         graphs_all.append(construct_triplet_graph(x,e,pid,o))
+    
+    x, e, pid, o, filename = data_row
+
+    graph = construct_triplet_graph(x, e, pid, o)
+    
+    logging.info("Constructing graph " + str(filename))
+    
+    save_graph(graph, os.path.join(output_dir, 'g_%03i' % filename))
+#     p = mp.Pool(processes=n_workers)
+#     p.imap(save_graph_map, zip(graphs_all, ))
+#     p.close()
+#     p.join()
+    
+#     save_graphs(graphs_all, filenames)
+
+
+def process_data(output_dir, result_dir, n_files, n_workers):
+    
+    logging.info("Processing result data")
+
     edge_scores, doublet_data = get_edge_scores(result_dir, n_files)
-    print("All data loaded")
-    graphs_all = []
-
-    for gi, oi, i in zip(doublet_data, edge_scores, np.arange(len(doublet_data))):
-        x, e, pid, o = gi.x.numpy(), gi.edge_index.numpy(), gi.pid.numpy(), oi.numpy() # Divide out feature_scale???
-        logging.info("Constructing graph " + str(i))
-        graphs_all.append(construct_triplet_graph(x,e,pid,o))
-
-    try:
-        filenames = [os.path.join(output_dir, 'g_%03i' % i)
-                     for i in range(len(graphs_all))]
-    except Exception as e:
-        logging.info(e)
-
-    save_graphs(graphs_all, filenames)
-
-    # """ List comprehension would be nicer... """
-    # all_graphs = [construct_triplet_graph(gi.x.numpy(), gi.edge_index.numpy(), gi.pid.numpy(), oi.numpy())
-    #                 for  gi, oi in zip(doublet_data, edge_scores)]
-
-
+    all_data = np.array([[gi.x.numpy(), gi.edge_index.numpy(), gi.pid.numpy(), oi.numpy()]
+                    for gi, oi in zip(doublet_data, edge_scores)])
+    all_data = np.c_[all_data, np.arange(len(all_data)).T]
+    print(all_data.shape)
+    logging.info("Data processed")
+    
+    with mp.Pool(processes=n_workers) as pool:
+        process_fn = partial(process_event, output_dir=output_dir)
+        pool.map(process_fn, all_data)
+ 
+    
 def main():
     """ Main function """
 
@@ -208,7 +224,9 @@ def main():
     result_dir = config['doublet_model_dir']
     output_dir = config['output_dir']
 
-    process_events(output_dir, result_dir, config['n_graphs'])
+    process_data(output_dir, result_dir, config['n_graphs'], args.n_workers)
+    
+#     process_events(output_dir, result_dir, config['n_graphs'], args.n_workers)
 
     logging.info('Processing finished')
 

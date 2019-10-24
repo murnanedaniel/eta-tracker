@@ -1,6 +1,6 @@
 # Input/output configuration
-input_dir: /global/cscratch1/sd/sfarrell/trackml/train_all
-output_dir: /global/cscratch1/sd/sfarrell/heptrkx/data/hitgraphs_big_000
+input_dir:  /global/cscratch1/sd/danieltm/ExaTrkX/trackml/train_all
+output_dir:  /global/cscratch1/sd/danieltm/ExaTrkX/doublet_results/hitgraphs_high_000
 n_files: 8192
 
 # Graph building configuration

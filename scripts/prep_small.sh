@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J prep-high
+#SBATCH -J prep-small
 #SBATCH -C haswell
 #SBATCH -q debug
 #SBATCH -t 30
@@ -7,7 +7,7 @@
 
 mkdir -p logs
 . scripts/setup_cori.sh
-config=configs/prep_big.yaml
+config=configs/prep_small.yaml
 
 echo $SLURM_JOB_NUM_NODES
 

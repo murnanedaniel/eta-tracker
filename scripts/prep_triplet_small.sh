@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH -J prep-high
+#SBATCH -J prep-small
 #SBATCH -C haswell
 #SBATCH -q debug
 #SBATCH -t 30
@@ -7,7 +7,7 @@
 
 mkdir -p logs
 . scripts/setup_cori.sh
-config=configs/prep_big.yaml
+config=configs/prep_tripgnn.yaml
 
 echo $SLURM_JOB_NUM_NODES
 
@@ -15,7 +15,7 @@ echo $SLURM_JOB_NUM_NODES
 i=0
 while [ $i -lt $SLURM_JOB_NUM_NODES ]; do
     echo "Launching task $i"
-    srun -N 1 python prepareDoublets.py \
+    srun -N 1 python prepareTriplets.py \
         --n-workers 32 --task $i --n-tasks $SLURM_JOB_NUM_NODES $config &
     let i=i+1
 done

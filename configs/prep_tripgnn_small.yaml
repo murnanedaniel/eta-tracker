@@ -1,0 +1,16 @@
+# Input/output configuration
+input_dir: /global/cscratch1/sd/danieltm/ExaTrkX/doublet_data/hitgraphs_tiny
+output_dir: /global/cscratch1/sd/danieltm/ExaTrkX/triplet_data/hitgraphs_tiny
+n_graphs: 200
+
+# Doublet trainer model
+doublet_model_dir: /global/cscratch1/sd/danieltm/ExaTrkX/doublet_results/agnn01
+
+# Graph building configuration
+selection:
+    pt_min: 1 # GeV
+    phi_slope_max: 0.001
+    z0_max: 200
+    n_phi_sections: 4
+    n_eta_sections: 1
+    eta_range: [-5, 5]

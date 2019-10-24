@@ -1,16 +1,17 @@
 #!/bin/bash
-#SBATCH -J agnn-cgpu
+#SBATCH -J agnn-cgpu-debug
 #SBATCH -N 1
 #SBATCH -C gpu
-#SBATCH -t 8:00:00
+#SBATCH -t 1:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem=30GB
 #SBATCH -d singleton
 #SBATCH -o logs/%x-%j.out
+#SBATCH -A m1759
 
 # Setup
-config=configs/agnn.yaml
+config=configs/agnn_med.yaml
 mkdir -p logs
 . scripts/setup_cgpu.sh
 

@@ -30,6 +30,10 @@ def save_graph(graph, filename):
     """Write a single graph to an NPZ file archive"""
     np.savez(filename, **graph_to_sparse(graph))
 
+def save_graph_map(graph_and_file):
+    """Write a single graph to an NPZ file archive"""
+    np.savez(graph_and_file[1], **graph_to_sparse(graph_and_file[0]))
+    
 def save_graphs(graphs, filenames):
     for graph, filename in zip(graphs, filenames):
         save_graph(graph, filename)

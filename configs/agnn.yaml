@@ -1,16 +1,16 @@
-output_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_results/agnn01
+output_dir: /global/cscratch1/sd/danieltm/ExaTrkX/doublet_results/agnn01
 
 trainer:
     name: gnn_sparse
 
 data:
     name: hitgraphs_sparse
-    input_dir: /mnt/c/Users/Daniel/Dropbox/Research/Publications/ExaTrkX/doublet_data/hitgraphs_tiny
+    input_dir: /global/cscratch1/sd/danieltm/ExaTrkX/doublet_data/hitgraphs_tiny
     n_train: 200 #57344
     n_valid: 10
     real_weight: 5 #6.25  # 0.5 / 0.08
-    batch_size: 8
-    n_workers: 1
+    batch_size: 4
+    n_workers: 4
 
 model:
     name: agnn
