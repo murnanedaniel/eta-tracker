@@ -145,8 +145,8 @@ def construct_triplet_graph(x,e,pid,o):
     triplet_X = np.concatenate([x[e[0]],x[e[1]],np.array([o]).T], axis=1)
 
     # Ground truth vector from THREE matching pids in the triplet edge
-    triplet_y = np.zeros(n_triplets, dtype=np.float32)
-    triplet_y[:] = pid[triplet_index[0]] == pid[triplet_index[1]]
+    triplet_y = np.zeros(n_triplets)
+    triplet_y[:] = int((pid[triplet_index[0]] == pid[triplet_index[1]]) and (pid[triplet_index[0]] != 0))
 
     # Convert the triplet_index matrix back to association matrices
     # NOTE: This is an inefficient process, since this is converted back later...
@@ -154,8 +154,8 @@ def construct_triplet_graph(x,e,pid,o):
     triplet_Ro = np.zeros((n_edges, n_triplets), dtype=np.uint8)
     triplet_Ri[triplet_index[0], np.arange(n_triplets)] = 1
     triplet_Ro[triplet_index[1], np.arange(n_triplets)] = 1
-    
-    
+
+
     return Graph(triplet_X, triplet_Ri, triplet_Ro, triplet_y)
     # return SparseGraph(X, edge_index, y)
 
@@ -169,24 +169,24 @@ def process_event(data_row, output_dir):
 #         x, e, pid, o = gi.x.numpy(), gi.edge_index.numpy(), gi.pid.numpy(), oi.numpy() # Divide out feature_scale???
 #         logging.info("Constructing graph " + str(i))
 #         graphs_all.append(construct_triplet_graph(x,e,pid,o))
-    
+
     x, e, pid, o, filename = data_row
 
     graph = construct_triplet_graph(x, e, pid, o)
-    
+
     logging.info("Constructing graph " + str(filename))
-    
+
     save_graph(graph, os.path.join(output_dir, 'g_%03i' % filename))
 #     p = mp.Pool(processes=n_workers)
 #     p.imap(save_graph_map, zip(graphs_all, ))
 #     p.close()
 #     p.join()
-    
+
 #     save_graphs(graphs_all, filenames)
 
 
 def process_data(output_dir, result_dir, n_files, n_workers):
-    
+
     logging.info("Processing result data")
 
     edge_scores, doublet_data = get_edge_scores(result_dir, n_files)
@@ -195,12 +195,12 @@ def process_data(output_dir, result_dir, n_files, n_workers):
     all_data = np.c_[all_data, np.arange(len(all_data)).T]
     print(all_data.shape)
     logging.info("Data processed")
-    
+
     with mp.Pool(processes=n_workers) as pool:
         process_fn = partial(process_event, output_dir=output_dir)
         pool.map(process_fn, all_data)
- 
-    
+
+
 def main():
     """ Main function """
 
@@ -225,7 +225,7 @@ def main():
     output_dir = config['output_dir']
 
     process_data(output_dir, result_dir, config['n_graphs'], args.n_workers)
-    
+
 #     process_events(output_dir, result_dir, config['n_graphs'], args.n_workers)
 
     logging.info('Processing finished')
