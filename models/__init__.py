@@ -12,6 +12,9 @@ def get_model(name, **model_args):
     elif name == 'agnn':
         from .agnn import GNNSegmentClassifier
         return GNNSegmentClassifier(**model_args)
+    elif name == 'counter':
+        from .counter import GNNTrackCounter
+        return GNNTrackCounter(**model_args)
     elif name == 'tripgnn':
         from .tripgnn import GNNSegmentClassifier
         return GNNSegmentClassifier(**model_args)
