@@ -192,7 +192,7 @@ def plot_outputs_roc(preds, targets, metrics):
     ax1.set_ylabel('True positive rate')
     ax1.set_title('ROC curve, AUC = %.3f' % metrics.roc_auc)
     plt.tight_layout()
-
+    
 def draw_sample(X, Ri, Ro, y, cmap='bwr_r', alpha_labels=True, figsize=(15, 7)):
     # Select the i/o node features for each segment
     feats_o = X[np.where(Ri.T)[1]]
@@ -223,7 +223,7 @@ def draw_sample(X, Ri, Ro, y, cmap='bwr_r', alpha_labels=True, figsize=(15, 7)):
     ax1.set_ylabel('$r$')
     plt.tight_layout()
 
-
+    
 def draw_sample_xy(hits, edges, preds, labels, cut=0.5, figsize=(16, 16)):
     x = hits[:,0] * np.cos(hits[:,1])
     y = hits[:,0] * np.sin(hits[:,1])
@@ -254,3 +254,245 @@ def draw_sample_xy(hits, edges, preds, labels, cut=0.5, figsize=(16, 16)):
                      '-', c='k', alpha=preds[j])
 
     return fig, ax0
+
+def draw_triplets_xy(hits, edges, preds, labels, cut=0.5, figsize=(16, 16)):
+    xi, yi = [hits[:,0] * np.cos(hits[:,1]), hits[:,0] * np.sin(hits[:,1])]
+    xo, yo = [hits[:,3] * np.cos(hits[:,4]), hits[:,3] * np.sin(hits[:,4])]
+    fig, ax0 = plt.subplots(figsize=figsize)
+
+    #Draw the hits
+    ax0.scatter(xi, yi, s=2, c='k')
+
+    # Draw the segments
+    for j in range(labels.shape[0]):
+
+        # False negatives
+        if preds[j] < cut and labels[j] > cut:
+            ax0.plot([xi[edges[0,j]], xo[edges[0,j]]],
+                     [yi[edges[0,j]], yo[edges[0,j]]],
+                     '--', c='b')
+
+        # False positives
+        if preds[j] > cut and labels[j] < cut:
+            ax0.plot([xi[edges[0,j]], xo[edges[0,j]]],
+                     [yi[edges[0,j]], yo[edges[0,j]]],
+                     '-', c='r', alpha=preds[j])
+
+        # True positives
+        if preds[j] > cut and labels[j] > cut:
+            ax0.plot([xi[edges[0,j]], xo[edges[0,j]]],
+                     [yi[edges[0,j]], yo[edges[0,j]]],
+                     '-', c='k', alpha=preds[j])
+
+    return fig, ax0
+
+
+#-----------------------------GRAPHING FUNCTIONS--------------------------
+
+def draw_xy(hits, edges, labels=None, figsize=(4,4)):
+    x = hits[:,0] * np.cos(hits[:,1])
+    y = hits[:,0] * np.sin(hits[:,1])
+    fig, ax0 = plt.subplots(figsize=figsize)
+
+    # Draw the hits
+    ax0.scatter(x, y, s=2, c='k')
+
+    # Draw the segments
+    if labels is None:
+        for j in range(edges.shape[1]):
+#         for j in range(edges.shape[1]):
+            ax0.plot([x[edges[0,j]], x[edges[1,j]]],
+                         [y[edges[0,j]], y[edges[1,j]]],
+                         '-', c='k')
+    else:
+        for j in range(edges.shape[1]):
+            if labels[j] == 1:
+                ax0.plot([x[edges[0,j]], x[edges[1,j]]],
+                             [y[edges[0,j]], y[edges[1,j]]],
+                             '-', c='k')
+            else:
+                ax0.plot([x[edges[0,j]], x[edges[1,j]]],
+                             [y[edges[0,j]], y[edges[1,j]]],
+                             '-', c='r')
+    
+    return fig, ax0
+    
+def draw_yz(hits, edges, labels=None, figsize=(4,4)):
+    z = hits[:,2]
+    y = hits[:,0] * np.sin(hits[:,1])
+    fig, ax0 = plt.subplots(figsize=figsize)
+
+    # Draw the hits
+    ax0.scatter(z, y, s=2, c='k')
+
+    # Draw the segments
+    if labels is None:
+        for j in range(edges.shape[1]):
+            ax0.plot([z[edges[0,j]], z[edges[1,j]]],
+                         [y[edges[0,j]], y[edges[1,j]]],
+                         '-', c='k')
+    else:
+        for j in range(edges.shape[1]):
+            if labels[j] == 1:
+                ax0.plot([z[edges[0,j]], z[edges[1,j]]],
+                             [y[edges[0,j]], y[edges[1,j]]],
+                             '-', c='k')
+            else:
+                ax0.plot([z[edges[0,j]], z[edges[1,j]]],
+                             [y[edges[0,j]], y[edges[1,j]]],
+                             '-', c='r')
+    
+    return fig, ax0        
+
+def draw_eta_phi(hits, edges, labels=None, figsize=(4,4)):
+    x = hits[:,0] * np.cos(hits[:,1])
+    y = hits[:,0] * np.sin(hits[:,1])
+    z = hits[:,2]
+    phi = hits[:,1]
+    theta = np.arccos(z / (x**2 + y**2 + z**2)**(0.5))
+    eta = -np.log(np.tan(theta/2))
+    
+    fig, ax0 = plt.subplots(figsize=figsize)
+    # Draw the hits
+#     ax0.scatter(phi, eta, s=2, c='k')
+
+    # Draw the segments
+    if labels is None:
+        for j in range(edges.shape[1]):
+            ax0.plot([phi[edges[0,j]], phi[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='k')
+    else:
+        for j in range(edges.shape[1]):
+            if labels[j] == 1:
+                ax0.plot([phi[edges[0,j]], phi[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='k')
+            else:
+                ax0.plot([phi[edges[0,j]], phi[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='r')
+    
+    return fig, ax0  
+
+def draw_eta_z(hits, edges, labels=None, figsize=(4,4)):
+    x = hits[:,0] * np.cos(hits[:,1])
+    y = hits[:,0] * np.sin(hits[:,1])
+    z = hits[:,2]
+    phi = hits[:,1]
+    theta = np.arccos(z / (x**2 + y**2 + z**2)**(0.5))
+    eta = -np.log(np.tan(theta/2))
+    
+    fig, ax0 = plt.subplots(figsize=figsize)
+    # Draw the hits
+#     ax0.scatter(phi, eta, s=2, c='k')
+
+    # Draw the segments
+    if labels is None:
+        for j in range(edges.shape[1]):
+            ax0.plot([z[edges[0,j]], z[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='k')
+    else:
+        for j in range(edges.shape[1]):
+            if labels[j] == 1:
+                ax0.plot([z[edges[0,j]], z[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='k')
+            else:
+                ax0.plot([z[edges[0,j]], z[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='r')
+    
+    return fig, ax0  
+
+def draw_eta_r(hits, edges, labels=None, figsize=(4,4)):
+    x = hits[:,0] * np.cos(hits[:,1])
+    y = hits[:,0] * np.sin(hits[:,1])
+    z = hits[:,2]
+    r = (x**2 + y**2 + z**2)**(0.5)
+    phi = hits[:,1]
+    theta = np.arccos(z / r)
+    eta = -np.log(np.tan(theta/2))
+    
+    fig, ax0 = plt.subplots(figsize=figsize)
+    # Draw the hits
+#     ax0.scatter(phi, eta, s=2, c='k')
+
+    # Draw the segments
+    if labels is None:
+        for j in range(edges.shape[1]):
+            ax0.plot([r[edges[0,j]], r[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='k')
+    else:
+        for j in range(edges.shape[1]):
+            if labels[j] == 1:
+                ax0.plot([r[edges[0,j]], r[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='k')
+            else:
+                ax0.plot([r[edges[0,j]], r[edges[1,j]]],
+                         [eta[edges[0,j]], eta[edges[1,j]]],
+                         '-', c='r')
+    
+    return fig, ax0  
+
+#--------------------SORTING-------------------
+
+def sort_eta(hits, edges, labels, preds=None):
+    x = hits[:,0] * np.cos(hits[:,1])
+    y = hits[:,0] * np.sin(hits[:,1])
+    z = hits[:,2]
+    r = (x**2 + y**2 + z**2)**(0.5)
+    phi = hits[:,1]
+    theta = np.arccos(z / r)
+    eta = -np.log(np.tan(theta/2))
+    
+    av_eta = (eta[edges[0,:]] + eta[edges[1,:]])/2
+    sorted_edges = edges[:,av_eta.argsort()]
+    sorted_labels = labels[av_eta.argsort()]
+
+    return sorted_edges, sorted_labels
+
+def track_maker(edges, labels):
+    true_edges = edges[:, labels>0]
+    
+    tried_indices = []
+    tracks = [[]]
+    track_i = 0
+    eq_edges_forward = [np.where(true_edges[0] == j)[0] for j in true_edges[1]]
+    eq_edges_backward = [np.where(true_edges[1] == j)[0] for j in true_edges[0]]
+    centre_value = 0
+
+    #     ADD AN UNWINDING ELEMENT IN CASE THERE ARE LATER PARENTS OF EDGES
+
+    while len(tried_indices) < true_edges.shape[1]:
+        backward_track = []
+        forward_track = []
+        backward_track.append(centre_value)
+        back_value = centre_value
+        while True:
+            back_value = eq_edges_backward[back_value]
+            if len(back_value) == 1:
+                back_value = back_value[0]
+                backward_track.append(back_value)
+            else:
+                break
+        next_value = centre_value
+        while True:
+            next_value = eq_edges_forward[next_value]
+            if len(next_value) == 1:
+                next_value = next_value[0]
+                forward_track.append(next_value)
+            else:
+                break
+        backward_track.reverse()
+        tracks[track_i] = backward_track + forward_track
+        tried_indices = tried_indices + backward_track + forward_track
+        tried_indices.sort()
+        track_i += 1
+        centre_value = next(iter(i+1 for i in range(len(tried_indices)-1) if tried_indices[i] != tried_indices[i+1]-1), len(tried_indices))
+        tracks.append([])
+        
+    return tracks

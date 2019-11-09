@@ -4,6 +4,7 @@ This module defines a generic trainer for simple models and datasets.
 
 # Externals
 import torch
+import numpy as np
 
 # Locals
 from .gnn_base import GNNBaseTrainer
@@ -25,7 +26,11 @@ class SparseGNNTrainer(GNNBaseTrainer):
             batch = batch.to(self.device)
             self.model.zero_grad()
             batch_output = self.model(batch)
-            batch_loss = self.loss_func(batch_output, batch.y, weight=batch.w)
+            if (i == 1) or (i==2):        
+                print("Prediction: ", batch_output, " location: ", torch.argmax(batch_output))
+                print("Truth: ", torch.argmax(batch.y))
+            # This converts the one_hot vector to an integer and calculates the loss against it
+            batch_loss = self.loss_func(batch_output.unsqueeze(0), torch.argmax(batch.y).unsqueeze(0))
             batch_loss.backward()
             self.optimizer.step()
             sum_loss += batch_loss.item()
@@ -57,23 +62,27 @@ class SparseGNNTrainer(GNNBaseTrainer):
         # Loop over batches
         for i, batch in enumerate(data_loader):
             batch = batch.to(self.device)
-
+#             print("i: ", i, " batch: ", batch)
             # Make predictions on this batch
+#             print(batch)
             batch_output = self.model(batch)
-            batch_loss = self.loss_func(batch_output, batch.y).item()
+            batch_loss = self.loss_func(batch_output.unsqueeze(0), torch.argmax(batch.y).unsqueeze(0))
             sum_loss += batch_loss
 
             # Count number of correct predictions
-            batch_pred = torch.sigmoid(batch_output)
-            matches = ((batch_pred > 0.5) == (batch.y > 0.5))
-            sum_correct += matches.sum().item()
-            sum_total += matches.numel()
-            self.logger.debug(' valid batch %i, loss %.4f', i, batch_loss)
+            m = torch.nn.Softmax()
+            batch_pred = m(batch_output)
+            match = torch.argmax(batch_pred) == torch.argmax(batch.y)
+#             print("Prediction: ", batch_pred, " location: ", torch.argmax(batch_pred))
+#             print("Truth: ", torch.argmax(batch.y))
+            sum_correct += int(match)
+#             sum_total += matches.numel()
+#             self.logger.debug(' valid batch %i, loss %.4f', i, batch_loss)
 
         # Summarize the validation epoch
         n_batches = i + 1
         summary['valid_loss'] = sum_loss / n_batches
-        summary['valid_acc'] = sum_correct / sum_total
+        summary['valid_acc'] = sum_correct / n_batches
         self.logger.debug(' Processed %i samples in %i batches',
                           len(data_loader.sampler), n_batches)
         self.logger.info('  Validation loss: %.3f acc: %.3f' %

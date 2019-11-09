@@ -12,14 +12,14 @@ import torch_geometric
 
 def load_graph(filename):
     with np.load(filename) as f:
-        x, y = f['X'], f['y']
+        x, y, pid = f['X'], f['y'], f['pid']
         Ri_rows, Ri_cols = f['Ri_rows'], f['Ri_cols']
         Ro_rows, Ro_cols = f['Ro_rows'], f['Ro_cols']
         n_edges = Ri_cols.shape[0]
         edge_index = np.zeros((2, n_edges), dtype=int)
         edge_index[0, Ro_cols] = Ro_rows
         edge_index[1, Ri_cols] = Ri_rows
-    return x, edge_index, y
+    return x, edge_index, y, pid
 
 class HitGraphDataset(Dataset):
     """PyTorch dataset specification for hit graphs"""
@@ -31,7 +31,7 @@ class HitGraphDataset(Dataset):
         elif input_dir is not None:
             input_dir = os.path.expandvars(input_dir)
             filenames = [os.path.join(input_dir, f) for f in os.listdir(input_dir)
-                         if f.startswith('event') and not f.endswith('_ID.npz')]
+                         if f.endswith('.npz') and not f.endswith('_ID.npz')]
         else:
             raise Exception('Must provide either input_dir or filelist to HitGraphDataset')
         self.filenames = filenames if n_samples is None else filenames[:n_samples]
@@ -39,12 +39,12 @@ class HitGraphDataset(Dataset):
         self.fake_weight = real_weight / (2 * real_weight - 1)
 
     def __getitem__(self, index):
-        x, edge_index, y = load_graph(self.filenames[index])
+        x, edge_index, y, pid = load_graph(self.filenames[index])
         # Compute weights
         w = y * self.real_weight + (1-y) * self.fake_weight
         return torch_geometric.data.Data(x=torch.from_numpy(x),
                                          edge_index=torch.from_numpy(edge_index),
-                                         y=torch.from_numpy(y), w=torch.from_numpy(w))
+                                         y=torch.from_numpy(y), w=torch.from_numpy(w), pid=torch.from_numpy(pid))
 
     def __len__(self):
         return len(self.filenames)
