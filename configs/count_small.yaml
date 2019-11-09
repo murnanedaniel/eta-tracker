@@ -6,8 +6,8 @@ trainer:
 data:
     name: hitgraphs_sparse
     input_dir: /global/cscratch1/sd/danieltm/ExaTrkX/counter_data/hitgraphs_small_000
-    n_train: 160 #57344
-    n_valid: 40
+    n_train: 3000 #57344
+    n_valid: 100
     real_weight: 3. #6.25  # 0.5 / 0.08
     batch_size: 1
     n_workers: 4
@@ -19,19 +19,19 @@ model:
     layer_norm: true
     n_graph_iters: 4
     max_tracks: 40
-    loss_func: binary_cross_entropy_with_logits
+    loss_func: cross_entropy
 
 optimizer:
     name: Adam #SGD
     #momentum: 0.9
-    learning_rate: 0.1
+    learning_rate: 0.01
     lr_scaling: sqrt
     lr_warmup_epochs: 5
     lr_decay_schedule:
-        - {start_epoch: 10, end_epoch: 20, factor: 0.5}
-        - {start_epoch: 20, end_epoch: 40, factor: 0.1}
-        - {start_epoch: 40, end_epoch: 50, factor: 0.05}
-        - {start_epoch: 50, end_epoch: 64, factor: 0.01}
+        - {start_epoch: 5, end_epoch: 10, factor: 0.5}
+        - {start_epoch: 10, end_epoch: 40, factor: 0.1}
+        - {start_epoch: 40, end_epoch: 70, factor: 0.05}
+        - {start_epoch: 70, end_epoch: 90, factor: 0.01}
 
 training:
-    n_epochs: 64
+    n_epochs: 90
