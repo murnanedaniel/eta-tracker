@@ -1,0 +1,43 @@
+# Geometry of "detector"
+multiples:
+    node:
+        convolutions:
+            max: 10
+            min: 0
+            default: 0
+        poolings:
+            max: 10
+            min: 0
+            default: 0
+    edge:
+        convolutions:
+            max: 10
+            min: 0
+            default: 0
+        poolings:
+            convolutions:
+            max: 10
+            min: 0
+            default: 0
+    graph:
+        convolutions:
+            max: 10
+            min: 0
+            default: 0
+        poolings:
+            max: 10
+            min: 0
+            default: 0
+
+methods: 
+    node:
+        convolutions: ["GCN", "GAT", "N-GCN"]
+        poolings: ["p1", "p2", "p3"]
+    edge:
+        convolutions: ["EdgeAttention", "GATEdge", "N-GCN"]
+        poolings: ["EdgePool", "DiffPool, p3"]
+    graph:
+        convolutions: ["Sum", "Mean", "SortMean"]
+        poolings: ["p1", "p2", "p3"]
+    
+        

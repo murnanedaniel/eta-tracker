@@ -8,7 +8,8 @@ from collections import namedtuple
 import numpy as np
 
 # A Graph is a namedtuple of matrices (X, Ri, Ro, y), with an optional (pid) field
-Graph = namedtuple('Graph', ['X', 'Ri', 'Ro', 'y', 'pid'], defaults=(None,))
+Graph = namedtuple('Graph', ['X', 'Ri', 'Ro', 'y', 'pid'])#, defaults=(None,))
+
 
 def graph_to_sparse(graph):
     Ri_rows, Ri_cols = graph.Ri.nonzero()

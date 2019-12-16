@@ -7,7 +7,7 @@
 
 mkdir -p logs
 . scripts/setup_cori.sh
-config=configs/count_med.yaml
+config=configs/prep_param_med.yaml
 
 echo $SLURM_JOB_NUM_NODES
 
@@ -15,7 +15,7 @@ echo $SLURM_JOB_NUM_NODES
 i=0
 while [ $i -lt $SLURM_JOB_NUM_NODES ]; do
     echo "Launching task $i"
-    srun -N 1 python prepareCounts.py \
+    srun -N 1 python prepareTracks.py \
         --n-workers 32 --task $i --n-tasks $SLURM_JOB_NUM_NODES $config &
     let i=i+1
 done

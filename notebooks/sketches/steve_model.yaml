@@ -1,0 +1,30 @@
+pipeline:
+    - input
+    - shortcut
+    - loop1:
+        - edgenet
+        - nodenet
+        - shortcut
+    - edgenet
+    - output
+    
+architecture:
+    input:
+        type: node
+        mlp: True
+    edgenet: 
+        type: edge
+        convolution: end_concatenation
+        mlp: True
+    nodenet:
+        type: node
+        convolution: 
+            attention: edgenet
+        mlp: True
+    shortcut:
+        type: node
+        convolution: shortcut_concatenation
+
+# This is a temporary list - the proper loop n_iterations will be loaded from a hyperparameter config file
+loops:
+    loop1: 4

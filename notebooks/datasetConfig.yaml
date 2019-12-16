@@ -1,0 +1,46 @@
+# Geometry of "detector"
+dataset:
+    num_layers: 
+        min: 4
+        max: 15
+        default: 10
+    height: 
+        min: 4
+        max: 40
+        default: 10
+    # width: 10
+    # N.B. The first min/max here describes the limits of the random generator, the nested min/max are just the limits of the interactive sliders
+    curve_min:
+        min: 10
+        max: 20
+        default: 15
+    curve_max:
+        min: 20
+        max: 100
+        default: 50
+#     noise: False
+    event_size_min: #i.e. The number of true tracks. N.B. I just limit the two with no overlap, but a smarter person would have the limits be dependent
+        min: 2
+        max: 10
+        default: 4
+    event_size_max:
+        min: 10
+        max: 40
+        default: 12
+    max_angle: 
+        min: 0.1
+        max: 1
+        default: 0.7
+    num_samples:
+        min: 10
+        max: 5000
+        default: 1000
+
+# Cut on the graph construction
+# max_angle: (4/6) # As a multiple of pi
+
+split:
+    train_percent:
+        min: 10
+        max: 90
+        default: 60

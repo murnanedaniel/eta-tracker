@@ -1,0 +1,13 @@
+# Input/output configuration
+input_dir:  /global/cscratch1/sd/danieltm/ExaTrkX/trackml/train_all
+output_dir:  /global/cscratch1/sd/danieltm/ExaTrkX/node_tracker_data/hitgraphs_med_000
+n_files: 1000
+
+# Graph building configuration
+selection:
+    pt_min: 0.5 # GeV
+    phi_slope_max: 0.0006
+    z0_max: 150
+    n_phi_sections: 1
+    n_eta_sections: 1
+    eta_range: [-2, 2]
